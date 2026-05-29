@@ -1,0 +1,10 @@
+{
+    "/js/app.js": "/js/app.js",
+    "/js/app.js.map": "/js/app.js.map",
+    "/assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js": "/assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js",
+    "/assets/plugins/perfect-scrollbar/perfect-scrollbar.css": "/assets/plugins/perfect-scrollbar/perfect-scrollbar.css",
+    "/assets/plugins/moment/moment.js": "/assets/plugins/moment/moment.js",
+    "/assets/plugins/chartjs/chart.min.js": "/assets/plugins/chartjs/chart.min.js",
+    "/assets/plugins/jquery-sparkline/jquery.sparkline.min.js": "/assets/plugins/jquery-sparkline/jquery.sparkline.min.js",
+    "/assets/plugins/jquery.easing/jquery.easing.min.js": "/assets/plugins/jquery.easing/jquery.easing.min.js"
+}
