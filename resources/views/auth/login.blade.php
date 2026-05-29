@@ -7,6 +7,7 @@
                 <div class="auto-form-wrapper">
                     <form action="{{ route('login')}}" method="post">
                         @csrf
+
                         <div class="form-group">
                             <label class="label">Username</label>
                             <div class="input-group">
