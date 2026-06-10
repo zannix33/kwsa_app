@@ -129,8 +129,10 @@
       <div class="collapse {{ show_class(['basic-ui/*']) }}" id="basic-ui">
         <ul class="nav flex-column sub-menu">
           <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-            <a class="nav-link" href="{{ url('/basic-ui/buttons') }}">Buttons</a>
+            <a class="nav-link"
+               href="{{ url('/basic-ui/buttons') }}">Buttons</a>
           </li>
+
           <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
             <a class="nav-link" href="{{ url('/basic-ui/dropdowns') }}">Dropdowns</a>
           </li>
@@ -140,7 +142,7 @@
         </ul>
       </div>
     </li>
-    
+
 
     <li class="nav-item {{ active_class(['charts/chartjs']) }}">
       <a class="nav-link" href="{{ url('/charts/chartjs') }}">
