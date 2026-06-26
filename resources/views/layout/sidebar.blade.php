@@ -72,9 +72,11 @@
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
                       <a class="nav-link" href="{{ route('clients.companies.index') }}">Companies</a>
                   </li>
+                  {{--
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">Areas and Branches</a>
                   </li>
+                  --}}
               </ul>
           </div>
       </li>
@@ -87,18 +89,17 @@
           </a>
           <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="accounting">
               <ul class="nav flex-column sub-menu">
-                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/payroll-periods') }}">Payroll</a>
-                  </li>
-                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/payrolls') }}">Payroll Views</a>
-                  </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ route('dtr.bulk.create') }}">DTR</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">13th Month Pay</a>
                   </li>
+                  {{--
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="#">Billing</a>
+                  </li>
+                  --}}
               </ul>
           </div>
       </li>
@@ -121,6 +122,8 @@
           </div>
       </li>
 
+
+      {{--
       <li class="nav-item {{ active_class(['basic-ui/accounting']) }}">
           <a class="nav-link" data-toggle="collapse" href="#operations" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
               <i class="menu-icon mdi mdi-head-cog"></i>
@@ -138,9 +141,9 @@
               </ul>
           </div>
       </li>
+      --}}
 
-
-
+      {{--
     <li class="nav-item {{ active_class(['basic-ui/*']) }}">
       <a class="nav-link" data-toggle="collapse" href="#basic-ui" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
         <i class="menu-icon mdi mdi-dna"></i>
@@ -163,6 +166,9 @@
         </ul>
       </div>
     </li>
+    --}}
+
+      {{--
 
 
     <li class="nav-item {{ active_class(['charts/chartjs']) }}">
@@ -171,6 +177,7 @@
         <span class="menu-title">Charts</span>
       </a>
     </li>
+    --}}
 
     <!--
     <li class="nav-item {{ active_class(['tables/basic-table']) }}">
@@ -214,6 +221,8 @@
     </li>
     -->
 
+      {{--
+
       <li class="nav-item {{ active_class(['basic-ui/system']) }}">
           <a class="nav-link" data-toggle="collapse" href="#system" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
               <i class="menu-icon mdi mdi-cogs"></i>
@@ -249,5 +258,6 @@
               </ul>
           </div>
       </li>
+      --}}
   </ul>
 </nav>
