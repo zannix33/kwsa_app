@@ -18,6 +18,7 @@ class CreateClientsTable extends Migration
             $table->string('name');
             $table->boolean('active');
             $table->string('category');
+            $table->integer('age_limit')->nullable();
             $table->timestamps();
         });
     }

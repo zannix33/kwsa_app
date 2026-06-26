@@ -9,6 +9,7 @@
     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
       <span class="mdi mdi-menu"></span>
     </button>
+      {{--
     <ul class="navbar-nav navbar-nav-left header-links">
       <li class="nav-item d-none d-xl-flex">
         <a href="#" class="nav-link">Schedule <span class="badge badge-primary ml-1">New</span>
@@ -31,14 +32,16 @@
         </div>
       </li>
     </ul>
+    --}}
     <ul class="navbar-nav navbar-nav-right">
+        {{--
       <li class="nav-item dropdown">
         <a class="nav-link count-indicator dropdown-toggle" id="messageDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
           <i class="mdi mdi-file-outline"></i>
           <span class="count">7</span>
         </a>
         <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0" aria-labelledby="messageDropdown">
-          <a class="dropdown-item py-3">
+           <a class="dropdown-item py-3">
             <p class="mb-0 font-weight-medium float-left">You have 7 unread mails </p>
             <span class="badge badge-pill badge-primary float-right">View all</span>
           </a>
@@ -69,6 +72,7 @@
           </a>
         </div>
       </li>
+
       <li class="nav-item dropdown">
         <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-toggle="dropdown">
           <i class="mdi mdi-bell-outline"></i>
@@ -108,9 +112,10 @@
           </a>
         </div>
       </li>
+      --}}
       <li class="nav-item dropdown d-none d-xl-inline-block">
         <a class="nav-link dropdown-toggle" id="UserDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
-          <span class="profile-text d-none d-md-inline-flex">Jerome Johnson</span>
+          <span class="profile-text d-none d-md-inline-flex">{{ auth()->user()->firstname }} {{ auth()->user()->lastname }}</span>
           <img class="img-xs rounded-circle" src="{{ url('assets/images/faces/face0.jpg') }}" alt="Profile image"> </a>
         <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
           <a class="dropdown-item p-0">

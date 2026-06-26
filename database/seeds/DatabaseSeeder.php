@@ -1,6 +1,11 @@
 <?php
 
+
 use Illuminate\Database\Seeder;
+
+use Database\Seeders\UserSeeder;
+use Database\Seeders\EmployeeSeeder;
+use Database\Seeders\CompanySeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,5 +17,8 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // $this->call(UsersTableSeeder::class);
+        $this->call(UserSeeder::class);
+        $this->call(EmployeeSeeder::class);
+        $this->call(CompanySeeder::class);
     }
 }

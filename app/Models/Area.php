@@ -8,4 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 class Area extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'client_id',
+        'name',
+        'description',
+        'rate',
+    ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
 }

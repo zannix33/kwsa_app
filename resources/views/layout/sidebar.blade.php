@@ -7,10 +7,10 @@
             <img src="{{ url('assets/images/faces/face0.jpg') }}" alt="profile image">
           </div>
           <div class="text-wrapper">
-            <p class="profile-name">Jerome Johnson</p>
+            <p class="profile-name">{{ auth()->user()->firstname }} {{ auth()->user()->lastname }}</p>
             <div class="dropdown" data-display="static">
               <a href="#" class="nav-link d-flex user-switch-dropdown-toggler" id="UsersettingsDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
-                <small class="designation text-muted">Saling Pusa</small>
+                <small class="designation text-muted">{{ auth()->user()->position }}</small>
                 <span class="status-indicator online"></span>
               </a>
               <div class="dropdown-menu" aria-labelledby="UsersettingsDropdown">
@@ -55,7 +55,7 @@
           <div class="collapse {{ show_class(['basic-ui/*']) }}" id="hr">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">Employee</a>
+                      <a class="nav-link" href="{{ route('hr.employee.index') }}">Employee</a>
                   </li>
               </ul>
           </div>
@@ -70,7 +70,7 @@
           <div class="collapse {{ show_class(['basic-ui/clients']) }}" id="clients">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">Companies</a>
+                      <a class="nav-link" href="{{ route('clients.companies.index') }}">Companies</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">Areas and Branches</a>
@@ -88,13 +88,34 @@
           <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="accounting">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">Payroll</a>
+                      <a class="nav-link" href="{{ url('/payroll-periods') }}">Payroll</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="{{ url('/payrolls') }}">Payroll Views</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">DTR</a>
+                      <a class="nav-link" href="{{ route('dtr.bulk.create') }}">DTR</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">13th Month Pay</a>
+                  </li>
+              </ul>
+          </div>
+      </li>
+
+      <li class="nav-item {{ active_class(['basic-ui/payroll']) }}">
+          <a class="nav-link" data-toggle="collapse" href="#payroll" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
+              <i class="menu-icon mdi mdi-calculator"></i>
+              <span class="menu-title">Payroll</span>
+              <i class="menu-arrow"></i>
+          </a>
+          <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="payroll">
+              <ul class="nav flex-column sub-menu">
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="{{ url('/payroll-periods') }}">Payroll</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="{{ url('/payrolls') }}">Payroll Views</a>
                   </li>
               </ul>
           </div>
@@ -206,6 +227,24 @@
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">Data Configurations</a>
+                  </li>
+              </ul>
+          </div>
+      </li>
+
+      <li class="nav-item {{ active_class(['basic-ui/clients']) }}">
+          <a class="nav-link" data-toggle="collapse" href="#clients" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
+              <i class="menu-icon mdi mdi-office-building"></i>
+              <span class="menu-title">Payroll Settings</span>
+              <i class="menu-arrow"></i>
+          </a>
+          <div class="collapse {{ show_class(['basic-ui/clients']) }}" id="clients">
+              <ul class="nav flex-column sub-menu">
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="{{ url('/sss-contributions') }}">SSS table</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
+                      <a class="nav-link" href="{{ url('/payroll-rates') }}">Payroll Rates</a>
                   </li>
               </ul>
           </div>

@@ -12,6 +12,9 @@
 */
 
 
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\BranchController;
+//use App\Http\Controllers\PayrollPeriodController;//
 
 Auth::routes();
 
@@ -20,12 +23,105 @@ Route::get('/home', 'HomeController@index')->name('home');
 
 Route::group(['middleware' => ['auth']], function () {
 
+    Route::get('/', 'DashboardController@index')->name('home');
 
-    Route::get('/', function () {
-        return view('dashboard');
-    });
+
+    //Route::get('/', function () {
+    //    return view('dashboard');
+    //});
 
 // Route::get('/','DashboardController@index');
+    Route::prefix('hr')->name('hr.')->group(function(){
+        Route::resource('employee', EmployeeController::class);
+    });
+
+    Route::prefix('clients')->name('clients.')->group(function(){
+        Route::resource('companies', CompanyController::class);
+    });
+
+    Route::resource('areas', AreaController::class);
+    Route::get('/areas/{area}/branches', [AreaController::class, 'branches']);
+
+    //DTR
+
+    Route::prefix('dtr')->group(function () {
+
+        Route::get(
+            '/bulk/create',
+            [\App\Http\Controllers\DailyTimeRecordController::class,'createBulk']
+        )->name('dtr.bulk.create');
+
+        Route::post(
+            '/bulk/generate',
+            [\App\Http\Controllers\DailyTimeRecordController::class,'generateBulk']
+        )->name('dtr.bulk.generate');
+
+        Route::post(
+            '/bulk/store',
+            [\App\Http\Controllers\DailyTimeRecordController::class,'bulkStore']
+        )->name('dtr.bulk.store');
+
+    });
+
+    //Route::resource('dtr', DailyTimeRecordController::class);
+
+
+
+    Route::resource('branches', BranchController::class);
+    Route::get(
+        '/branches/{branch}/guards',
+        [BranchController::class, 'guards']
+    );
+
+    Route::post(
+        '/branches/assign-guard',
+        [BranchController::class, 'assignGuard']
+    );
+
+    Route::resource('sss-contributions', SssContriController::class);
+
+    Route::resource('payroll-rates', PayrollRateController::class);
+
+    // Payrolls
+    Route::resource(
+        'payroll-periods',
+        PayrollPeriodController::class
+    );
+
+    Route::post(
+        '/payroll-periods/{payrollPeriod}/generate',
+        [\App\Http\Controllers\PayrollPeriodController::class, 'generate']
+    )->name('payrolls.generate');
+
+    Route::post(
+        '/payroll-generation/{payrollPeriod}',
+        [\App\Http\Controllers\PayrollGenerationController::class, 'generate']
+    )->name('payroll-generation.generate');
+
+    Route::resource('payrolls', PayrollController::class)
+        ->only([
+            'index',
+            'show',
+            'destroy'
+        ]);
+
+    Route::post(
+        'payrolls/{payroll}/mark-paid',
+        [PayrollController::class, 'markPaid']
+    )->name('payrolls.mark-paid');
+
+    // Government Deduction
+    Route::resource(
+        'sss',
+        SssContributionController::class
+    );
+
+    // Report PDFs
+    Route::get(
+        '/payrolls/{payroll}/pdf',
+        [\App\Http\Controllers\PayrollController::class, 'pdf']
+    )->name('payrolls.pdf');
+
 
     Route::group(['prefix' => 'basic-ui'], function(){
         Route::get('accordions', function () { return view('pages.basic-ui.accordions'); });

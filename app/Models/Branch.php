@@ -8,4 +8,27 @@ use Illuminate\Database\Eloquent\Model;
 class Branch extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'area_id',
+        'name',
+        'address',
+        'province',
+        'baranggay',
+        'operation_start',
+        'operation_end',
+    ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'branch_user'
+        )->withTimestamps();
+    }
 }

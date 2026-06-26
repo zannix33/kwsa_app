@@ -14,6 +14,11 @@
   <!-- plugin css -->
   {!! Html::style('assets/plugins/@mdi/font/css/materialdesignicons.min.css') !!}
   {!! Html::style('assets/plugins/perfect-scrollbar/perfect-scrollbar.css') !!}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
   <!-- end plugin css -->
 
   @stack('plugin-styles')
@@ -22,7 +27,17 @@
   {!! Html::style('css/app.css') !!}
   <!-- end common css -->
 
+    <style>
+        .form-control {
+            height: 3rem;
+        }
+    </style>
+
+    <style>
   @stack('style')
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 </head>
 <body data-base-url="{{url('/')}}">
 
@@ -55,6 +70,7 @@
   {!! Html::script('assets/js/settings.js') !!}
   {!! Html::script('assets/js/todolist.js') !!}
   <!-- end common js -->
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 
   @stack('custom-scripts')
 </body>

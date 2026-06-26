@@ -23,6 +23,12 @@ class CreateUsersTable extends Migration
             $table->string('city')->nullable();
             $table->string('province')->nullable();
             $table->string('email')->unique();
+            $table->bigInteger('phone')->nullable();
+            $table->string('religion')->nullable();
+            $table->string('spouse_name')->nullable();
+            $table->datetime('spouse_birthdate')->nullable();
+            $table->string('beneficiary_name')->nullable();
+            $table->bigInteger('beneficiary_contact')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
             $table->string('civil_status')->nullable();
@@ -35,11 +41,12 @@ class CreateUsersTable extends Migration
             $table->string('philhealth')->nullable();
             $table->string('bloodtype')->nullable();
             $table->string('position')->nullable();
-            $table->string('so_license')->nullable();
-            $table->string('so_issued')->nullable();
-            $table->string('so_expiry')->nullable();
+            $table->string('lesp_num')->nullable();
+            $table->string('lesp_issued')->nullable();
+            $table->string('lesp_expiry')->nullable();
             $table->datetime('date_hired')->nullable();
             $table->datetime('dt_date')->nullable();
+            $table->boolean('active')->default(1);
 
             $table->rememberToken();
             $table->timestamps();
