@@ -1,5 +1,51 @@
 @push('custom-scripts')
     <script>
+        flatpickr(".military-time", {
+
+            enableTime: true,
+
+            noCalendar: true,
+
+            dateFormat: "H:i",
+
+            time_24hr: true,
+
+            minuteIncrement: 1
+
+        });
+
+    </script>
+
+
+
+
+    <script>
+
+        document.addEventListener('change', function(e){
+
+            if(e.target.classList.contains('holiday'))
+            {
+                if(e.target.checked)
+                {
+                    e.target
+                        .closest('tr')
+                        .querySelector('.special_holiday')
+                        .checked = false;
+                }
+            }
+
+            if(e.target.classList.contains('special_holiday'))
+            {
+                if(e.target.checked)
+                {
+                    e.target
+                        .closest('tr')
+                        .querySelector('.holiday')
+                        .checked = false;
+                }
+            }
+
+        });
 
         function calculateND(start, end)
         {
@@ -151,21 +197,42 @@
                     ) / 1000 / 60 / 60;
             }
 
+            const REGULAR_LIMIT = 8;
+
             /*
-            |--------------------------------------------------------------------------
-            | Regular
-            |--------------------------------------------------------------------------
+                |--------------------------------------------------------------------------
+                | Regular
+                |--------------------------------------------------------------------------
             */
 
             let regularHours =
                 Math.max(
                     scheduledHours
                     -
+                    (scheduledHours - REGULAR_LIMIT)
+                    -
                     lateHours
                     -
                     undertimeHours,
                     0
                 );
+
+            /*
+             |--------------------------------------------------------------------------
+             | Actual Payable Hours
+             |--------------------------------------------------------------------------
+             */
+
+            let payableHours =
+                Math.max(
+                    workedHours
+                    -
+                    lateHours
+                    -
+                    undertimeHours,
+                    0
+                );
+
 
             /*
             |--------------------------------------------------------------------------
@@ -175,8 +242,8 @@
 
             let overtimeHours =
                 Math.max(
-                    workedHours -
-                    regularHours,
+                    payableHours -
+                    REGULAR_LIMIT,
                     0
                 );
 
@@ -421,6 +488,253 @@
         */
 
         calculateTotals();
+
+        document.getElementById('addRow').addEventListener('click', function () {
+
+            let tbody = document.getElementById('dtrTableBody');
+
+            let index = parseInt(document.getElementById('rowIndex').value);
+
+            let row = `
+                    <tr>
+
+                    <td>
+
+                    <input
+                    type="date"
+                    class="form-control work_date"
+                    name="records[${index}][work_date]">
+
+                    </td>
+
+                    <td class="day_name"></td>
+
+                    <td>
+                    <input
+                    type="time"
+                    class="form-control military-time operation_start"
+                    name="records[${index}][operation_start]">
+                    </td>
+
+                    <td>
+                    <input
+                    type="time"
+                    class="form-control military-time operation_end"
+                    name="records[${index}][operation_end]">
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="number"
+                    class="form-control break_minutes"
+                    name="records[${index}][break_minutes]"
+                    value="60">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    class="form-control scheduled_hours"
+                    readonly>
+
+                    <input
+                    type="hidden"
+                    class="scheduled_hours_hidden"
+                    name="records[${index}][scheduled_hours]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="time"
+                    class="form-control military-time time_in"
+                    name="records[${index}][time_in]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="time"
+                    class="form-control military-time time_out"
+                    name="records[${index}][time_out]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    readonly
+                    class="form-control regular_hours">
+
+                    <input
+                    type="hidden"
+                    class="regular_hours_hidden"
+                    name="records[${index}][regular_hours]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    readonly
+                    class="form-control overtime_hours">
+
+                    <input
+                    type="hidden"
+                    class="overtime_hours_hidden"
+                    name="records[${index}][overtime_hours]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    readonly
+                    class="form-control nd_hours">
+
+                    <input
+                    type="hidden"
+                    class="nd_hours_hidden"
+                    name="records[${index}][night_differential_hours]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    readonly
+                    class="form-control late_hours">
+
+                    <input
+                    type="hidden"
+                    class="late_hours_hidden"
+                    name="records[${index}][late_hours]">
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    readonly
+                    class="form-control undertime_hours">
+
+                    <input
+                    type="hidden"
+                    class="undertime_hours_hidden"
+                    name="records[${index}][undertime_hours]">
+
+                    </td>
+
+                    <td class="text-center">
+
+                    <input
+                    type="checkbox"
+                    class="rest_day"
+                    name="records[${index}][is_rest_day]">
+
+                    </td>
+
+                    <td class="text-center">
+
+                    <input
+                    type="checkbox"
+                    class="holiday"
+                    name="records[${index}][is_holiday]">
+
+                    </td>
+
+                    <td class="text-center">
+
+                    <input
+                    type="checkbox"
+                    class="special_holiday"
+                    name="records[${index}][special_holiday]">
+
+                    </td>
+
+                    <td class="text-center">
+
+                    <input
+                    type="checkbox"
+                    class="extended_hours"
+                    name="records[${index}][is_extended_hours]" checked>
+
+                    </td>
+
+                    <td>
+
+                    <input
+                    type="text"
+                    class="form-control"
+                    name="records[${index}][remarks]">
+
+                    </td>
+
+                    <td class="text-center">
+
+                    <button
+                    type="button"
+                    class="btn btn-danger btn-sm removeRow">
+
+                    <i class="fa fa-trash"></i>
+
+                    </button>
+
+                    </td>
+
+                    </tr>
+                    `;
+
+            tbody.insertAdjacentHTML('beforeend', row);
+
+            document.getElementById('rowIndex').value = index + 1;
+
+        });
+
+        document.addEventListener('change', function (e) {
+
+            if (e.target.classList.contains('work_date')) {
+
+                let row = e.target.closest('tr');
+
+                let date = new Date(e.target.value);
+
+                if (!isNaN(date)) {
+
+                    row.querySelector('.day_name').innerHTML =
+                        date.toLocaleDateString('en-US', {
+                            weekday: 'long'
+                        });
+
+                }
+
+            }
+
+        });
+
+        document.addEventListener('click', function (e) {
+
+            let button = e.target.closest('.removeRow');
+
+            if (button) {
+
+                button.closest('tr').remove();
+
+                calculateTotals();
+
+            }
+
+        });
 
     </script>
 @endpush

@@ -14,9 +14,27 @@
 
         </div>
 
+        <div class="mb-3">
+
+            <button type="button"
+                    id="addRow"
+                    class="btn btn-success">
+
+                <i class="fa fa-plus"></i>
+
+                Add Extended Hours
+
+            </button>
+
+        </div>
+
         <div class="table-responsive">
 
-            <table class="table table-bordered table-sm">
+
+            <table
+                class="table table-bordered table-sm"
+                id="dtrTableBody"
+            >
 
                 <thead>
 
@@ -42,7 +60,9 @@
                     <th>UT</th>
 
                     <th>Rest</th>
-                    <th>Holiday</th>
+                    <th>Reg Holiday</th>
+                    <th>Sp Holiday</th>
+                    <th>Extended</th>
 
                     <th>Remarks</th>
 
@@ -70,13 +90,13 @@
 
                         <td>
                             <input type="time"
-                                   class="form-control operation_start"
+                                   class="form-control military-time operation_start"
                                    name="records[{{ $loop->index }}][operation_start]">
                         </td>
 
                         <td>
                             <input type="time"
-                                   class="form-control operation_end"
+                                   class="form-control military-time operation_end"
                                    name="records[{{ $loop->index }}][operation_end]">
                         </td>
 
@@ -99,13 +119,13 @@
 
                         <td>
                             <input type="time"
-                                   class="form-control time_in"
+                                   class="form-control military-time time_in"
                                    name="records[{{ $loop->index }}][time_in]">
                         </td>
 
                         <td>
                             <input type="time"
-                                   class="form-control time_out"
+                                   class="form-control military-time time_out"
                                    name="records[{{ $loop->index }}][time_out]">
                         </td>
 
@@ -170,6 +190,26 @@
                                    name="records[{{ $loop->index }}][is_holiday]">
                         </td>
 
+                        <td class="text-center">
+
+                            <input
+                                type="checkbox"
+                                class="special_holiday"
+                                name="records[{{ $loop->index }}][special_holiday]"
+                                value="1">
+
+                        </td>
+
+                        <td class="text-center">
+
+                            <input
+                                type="checkbox"
+                                class="extended_hours"
+                                name="records[{{ $loop->index }}][is_extended_hours]"
+                                value="1">
+
+                        </td>
+
                         <td>
                             <input type="text"
                                    class="form-control"
@@ -183,6 +223,10 @@
                 </tbody>
 
             </table>
+            <input
+                type="hidden"
+                id="rowIndex"
+                value="{{ count($period) }}">
 
         </div>
 

@@ -14,7 +14,7 @@
 
                 <input type="time"
                        id="default_operation_start"
-                       class="form-control"
+                       class="form-control military-time"
                        value="08:00">
 
             </div>
@@ -25,7 +25,7 @@
 
                 <input type="time"
                        id="default_operation_end"
-                       class="form-control"
+                       class="form-control military-time"
                        value="17:00">
 
             </div>
@@ -36,7 +36,7 @@
 
                 <input type="time"
                        id="default_time_in"
-                       class="form-control"
+                       class="form-control military-time"
                        value="08:00">
 
             </div>
@@ -47,7 +47,7 @@
 
                 <input type="time"
                        id="default_time_out"
-                       class="form-control"
+                       class="form-control military-time"
                        value="17:00">
 
             </div>
@@ -59,7 +59,7 @@
                 <input type="number"
                        id="default_break"
                        class="form-control"
-                       value="60">
+                       value="0">
 
             </div>
 

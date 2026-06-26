@@ -135,6 +135,8 @@ class DailyTimeRecordController extends Controller
 
     private function calculateDtr(array $record)
     {
+        $regularLimit = 8;
+
         $workDate =
             Carbon::parse(
                 $record['work_date']
@@ -260,16 +262,17 @@ class DailyTimeRecordController extends Controller
         | Regular Hours
         |--------------------------------------------------------------------------
         */
+        $payableHours = max(
+            $workedHours - $lateHours - $undertimeHours,
+            0
+        );
 
-        $regularHours =
-            max(
-                $scheduledHours
-                -
-                $lateHours
-                -
-                $undertimeHours,
-                0
-            );
+        $regularHours = min(
+            $payableHours,
+            $regularLimit
+        );
+
+
 
         /*
         |--------------------------------------------------------------------------
@@ -277,13 +280,10 @@ class DailyTimeRecordController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $overtimeHours =
-            max(
-                $workedHours
-                -
-                $regularHours,
-                0
-            );
+        $overtimeHours = max(
+            $payableHours - $regularLimit,
+            0
+        );
 
         /*
         |--------------------------------------------------------------------------

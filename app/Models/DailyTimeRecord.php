@@ -35,6 +35,8 @@ class DailyTimeRecord extends Model
 
         'is_rest_day',
         'is_holiday',
+        'special_holiday',
+        'is_extended_hours',
 
         'remarks',
     ];

@@ -12,6 +12,8 @@ class PayrollCalculationService
         Collection $dtrs
     ): array {
 
+        $maximumRegularHours = 8;
+
         $dailyRate = 450; //$user->monthly_salary / 26;
         $hourlyRate = $dailyRate / 8;
 

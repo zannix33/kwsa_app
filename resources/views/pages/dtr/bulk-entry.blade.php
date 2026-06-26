@@ -3,6 +3,11 @@
 @push('plugin-styles')
     <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
 
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+
+
     @include('pages.dtr.partials.styles')
 
 @endpush
