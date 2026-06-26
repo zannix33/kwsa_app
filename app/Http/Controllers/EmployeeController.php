@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\User;
+use Yajra\DataTables\Facades\DataTables;
 
 
 class EmployeeController extends Controller
@@ -20,7 +21,7 @@ class EmployeeController extends Controller
 
             $employees = User::all();
 
-            return datatables()->of($employees)
+            return DataTables::of($employees)
                 ->addIndexColumn()
                 ->addColumn('fullname', function ($row) {
                     return $row->lastname . ', ' . $row->firstname . ' ' . $row->middlename;
