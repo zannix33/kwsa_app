@@ -2,7 +2,6 @@
 
 @push('plugin-styles')
     <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 @endpush
 
 @section('content')

@@ -57,6 +57,9 @@
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
                       <a class="nav-link" href="{{ route('hr.employee.index') }}">Employee</a>
                   </li>
+                  <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
+                      <a class="nav-link" href="{{ route('dtr.bulk.create') }}">DTR</a>
+                  </li>
               </ul>
           </div>
       </li>
@@ -89,17 +92,16 @@
           </a>
           <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="accounting">
               <ul class="nav flex-column sub-menu">
-                  <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
-                      <a class="nav-link" href="{{ route('dtr.bulk.create') }}">DTR</a>
-                  </li>
+
+
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">13th Month Pay</a>
                   </li>
-                  {{--
+
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
                       <a class="nav-link" href="#">Billing</a>
                   </li>
-                  --}}
+
               </ul>
           </div>
       </li>
