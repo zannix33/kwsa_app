@@ -14,14 +14,14 @@ class SssContributionController extends Controller
         )->get();
 
         return view(
-            'sss.index',
+            'pages.sss.index',
             compact('records')
         );
     }
 
     public function create()
     {
-        return view('sss.create');
+        return view('pages.sss.create');
     }
 
     public function store(Request $request)
@@ -31,6 +31,7 @@ class SssContributionController extends Controller
             'to_salary' => 'required|numeric',
             'employee_share' => 'required|numeric',
             'employer_share' => 'required|numeric',
+            'rate' => 'required|string',
         ]);
 
         SssContribution::create(
@@ -46,21 +47,21 @@ class SssContributionController extends Controller
     }
 
     public function edit(
-        SssContribution $ss
+        SssContribution $sss
     )
     {
         return view(
-            'sss.edit',
-            compact('ss')
+            'pages.sss.edit',
+            compact('sss')
         );
     }
 
     public function update(
         Request $request,
-        SssContribution $ss
+        SssContribution $sss
     )
     {
-        $ss->update(
+        $sss->update(
             $request->all()
         );
 

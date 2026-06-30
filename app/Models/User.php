@@ -46,6 +46,9 @@ class User extends Authenticatable
         'lesp_expiry',
         'date_hired',
         'dt_date',
+        'branch_id',
+        'area_id',
+        'photo',
     ];
 
     /**
@@ -82,12 +85,26 @@ class User extends Authenticatable
         ]);
     }
 
+    /*
+
     public function branches()
     {
         return $this->belongsToMany(
             Branch::class,
             'branch_user'
         )->withTimestamps();
+    }
+
+    */
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
     }
 
     public function dailyTimeRecords()
@@ -102,5 +119,23 @@ class User extends Authenticatable
             $this->middlename . ' ' .
             $this->lastname
         );
+    }
+
+    //Arms
+
+    public function armAssignments()
+    {
+        return $this->hasMany(ArmAssignment::class);
+    }
+
+    public function currentFirearm()
+    {
+        return $this->hasOne(ArmAssignment::class)
+            ->whereNull('returned_at');
+    }
+
+    public function ammunitionReleases()
+    {
+        return $this->hasMany(AmmunitionRelease::class);
     }
 }

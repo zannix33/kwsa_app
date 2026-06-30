@@ -33,6 +33,7 @@
                     <th>Employee</th>
                     <th>Employer</th>
                     <th>EC</th>
+                    <th>Rate</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -50,6 +51,7 @@
                         <td>{{ $row->employee_share }}</td>
                         <td>{{ $row->employer_share }}</td>
                         <td>{{ $row->ec }}</td>
+                        <td>{{ $row->rate }}</td>
                         <td>
                             {{ $row->active ? 'Active' : 'Inactive' }}
                         </td>

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSssContrisTable extends Migration
+class CreateLoanTypesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,11 @@ class CreateSssContrisTable extends Migration
      */
     public function up()
     {
-        Schema::create('sss_contris', function (Blueprint $table) {
+        Schema::create('loan_types', function (Blueprint $table) {
             $table->id();
-            $table->double('from_salary')->nullable();
-            $table->double('to_salary')->nullable();
-            $table->double('premium')->nullable();
-            $table->boolean('active')->default(1);
+            $table->string('name');
+            $table->string('code')->unique();
+            $table->boolean('active')->default(true);
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ class CreateSssContrisTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sss_contris');
+        Schema::dropIfExists('loan_types');
     }
 }

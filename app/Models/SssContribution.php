@@ -15,6 +15,7 @@ class SssContribution extends Model
         'employee_share',
         'employer_share',
         'ec',
+        'rate',
         'active'
     ];
 }

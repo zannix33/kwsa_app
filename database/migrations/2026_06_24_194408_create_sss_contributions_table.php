@@ -24,6 +24,8 @@ class CreateSssContributionsTable extends Migration
 
             $table->decimal('ec', 12, 2)->default(0);
 
+            $table->string('rate')->default('ncr');
+
             $table->boolean('active')->default(1);
 
             $table->timestamps();

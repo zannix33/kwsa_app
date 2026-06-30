@@ -2,6 +2,8 @@
 
 namespace App\Services\Payroll;
 
+use App\Models\Branch;
+use App\Models\PayrollItem;
 use App\Models\User;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
@@ -209,7 +211,7 @@ class PayrollGenerationService
         */
 
         $sss = SSSService::compute(
-            2000//$user->monthly_salary
+            $result['earnings']['overall_pay']
         );
 
         PayrollItemService::deduction(
@@ -219,15 +221,21 @@ class PayrollGenerationService
             $sss
         );
 
-        /*
-
-        $monthlySalary =
-            $user->branch->rate * 26;
-
-        $sss = SSSService::compute(
-            $monthlySalary
+        PayrollItemService::deduction(
+            $payroll,
+            'PHIC',
+            'PhilHealth Contribution',
+            250
         );
 
+        PayrollItemService::deduction(
+            $payroll,
+            'PAGIBIG',
+            'PagIBIG Contribution',
+            200
+        );
+
+        /*
         $philhealth =
             PhilHealthService::compute(
                 $monthlySalary
@@ -295,5 +303,107 @@ class PayrollGenerationService
         )->update([
             'payroll_id' => $payroll->id
         ]);
+    }
+
+    public function generate13thMonth($areaId,$from,$to)
+    {
+
+        $employees = Branch::leftJoin('users', 'branches.id', '=', 'users.branch_id')
+            ->where('branches.area_id', $areaId)
+            ->select(
+                'branches.id as branch_id',
+                'branches.name as branch_name',
+                'users.id as user_id',
+                'users.firstname',
+                'users.middlename',
+                'users.lastname'
+            )
+            ->orderBy('branches.name')
+            ->orderBy('users.lastname')
+            ->get();
+
+        /*$employees = User::whereHas('branches',function($q) use ($areaId){
+
+            $q->where('area_id',$areaId);
+
+        })
+            ->with('branches')
+            ->get();
+        */
+
+        $rows=[];
+
+        $periods = PayrollPeriod::whereYear('date_from', $from)
+            ->orderBy('date_from')
+            ->pluck('id');
+
+
+        foreach($employees as $employee){
+
+            $payrolls = Payroll::where('user_id',$employee->user_id)
+                ->whereIn('payroll_period_id',[$periods])
+                ->pluck('id');
+
+
+
+
+
+            foreach($payrolls as $payroll){
+
+                $dtrs = DailyTimeRecord::where('user_id',$employee->user_id)
+                    ->whereIn('payroll_id',[$payrolls])
+                    ->get();
+
+                //dd($dtrs);
+                $hours=0;
+                $cashBond=0;
+                $basicSalary=0;
+
+                foreach($dtrs as $dtr){
+
+
+
+
+                    $hours += $dtr->regular_hours;
+
+                    $basicSalary += 450;
+
+                    $cashBond += PayrollItem::where('payroll_id',$payroll)
+                        ->where('code','CB')
+                        ->sum('amount');
+
+                }
+
+                $daysWorked = $hours / 8;
+
+                $thirteenth = 500*365/12/12/30* $daysWorked;
+
+                $rows[]=[
+
+                    'employee'=>$employee,
+
+                    'branch'=>$employee->branch_name,
+
+                    'hours'=>$hours,
+
+                    'days'=>$daysWorked,
+
+                    'cash_bond'=>$cashBond,
+
+                    'thirteenth'=>$thirteenth,
+
+                    'total'=>$cashBond+$thirteenth
+
+                ];
+
+
+
+            }
+
+
+
+        }
+
+        return collect($rows);
     }
 }

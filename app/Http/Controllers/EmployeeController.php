@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use Illuminate\Http\Request;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 
 
 class EmployeeController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      *
@@ -19,40 +22,95 @@ class EmployeeController extends Controller
     {
         if ($request->ajax()) {
 
-            $employees = User::all();
+            $query = User::query();
 
-            return DataTables::of($employees)
+            if ($request->filled('position')) {
+                $query->where('position', $request->position);
+            }
+
+            if ($request->filled('branch_id')) {
+                $query->where('branch_id', $request->branch_id);
+            }
+
+            if ($request->filled('age_from')) {
+                $query->whereDate(
+                    'birthdate',
+                    '<=',
+                    now()->subYears($request->age_from)
+                );
+            }
+
+            if ($request->filled('age_to')) {
+                $query->whereDate(
+                    'birthdate',
+                    '>=',
+                    now()->subYears($request->age_to + 1)->addDay()
+                );
+            }
+
+            return DataTables::eloquent($query)
+
                 ->addIndexColumn()
-                ->addColumn('fullname', function ($row) {
-                    return $row->lastname . ', ' . $row->firstname . ' ' . $row->middlename;
+
+                ->addColumn('photo', function ($row) {
+
+                    if ($row->photo) {
+
+                        return '<img src="'.asset('storage/'.$row->photo).'"
+                    width="50"
+                    height="50"
+                    class="rounded-circle">';
+
+                    }
+
+                    $initials = strtoupper(
+                        substr($row->firstname, 0, 1) .
+                        substr($row->lastname, 0, 1)
+                    );
+
+                    return '
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+             style="
+                width:50px;
+                height:50px;
+                font-weight:bold;
+                font-size:18px;
+                margin:auto;
+             ">
+            '.$initials.'
+        </div>
+    ';
                 })
+
+                ->addColumn('fullname', function ($row) {
+                    return $row->lastname.', '.$row->firstname;
+                })
+
                 ->addColumn('age', function ($row) {
                     return $row->birthdate?->age;
                 })
-                ->addColumn('position', function ($row) {
-                    return $row->position ?? '-';
-                })
+
                 ->addColumn('action', function ($row) {
+
                     return '
-                    <a href="'.route('hr.employee.show', $row->id).'" class="btn btn-sm btn-info">
+                    <a href="'.route('hr.employee.show',$row).'" class="btn btn-info btn-sm">
                         View
                     </a>
 
-                    <a href="'.route('hr.employee.edit', $row->id).'" class="btn btn-sm btn-primary">
+                    <a href="'.route('hr.employee.edit',$row).'" class="btn btn-primary btn-sm">
                         Edit
                     </a>
                 ';
                 })
-                ->rawColumns(['action'])
+
+                ->rawColumns(['photo','action'])
+
                 ->make(true);
         }
 
-        return view('pages.employee.view');
+        $branches = Branch::orderBy('name')->get();
 
-
-
-        //return view('pages.employee.view', compact('employees'));
-
+        return view('pages.employee.view', compact('branches'));
     }
 
     /**
@@ -62,7 +120,9 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        //
+        //$employee = User::findOrFail($id);
+
+        return view('pages.employee.create');
     }
 
     /**
@@ -74,6 +134,7 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'name' => 'required|string|max:255',
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
@@ -118,6 +179,14 @@ class EmployeeController extends Controller
             'date_hired' => 'nullable|date',
             'dt_date' => 'nullable|date',
         ]);
+
+        if ($request->hasFile('photo')) {
+
+            $validated['photo'] = $request
+                ->file('photo')
+                ->store('employees', 'public');
+
+        }
 
         $validated['password'] = $request->password
             ? Hash::make($request->password)
@@ -170,6 +239,7 @@ class EmployeeController extends Controller
 
 
         $validated = $request->validate([
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'name' => 'required|string|max:255',
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
@@ -216,6 +286,19 @@ class EmployeeController extends Controller
             'password' => 'nullable|min:8',
         ]);
 
+        if ($request->hasFile('photo')) {
+
+            if ($employee->photo) {
+
+                Storage::disk('public')->delete($employee->photo);
+
+            }
+
+            $validated['photo'] = $request
+                ->file('photo')
+                ->store('employees', 'public');
+        }
+
 
 
         // Update password only if entered
@@ -244,5 +327,24 @@ class EmployeeController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function assignBranch(Request $request, User $user)
+    {
+        $request->validate([
+            'branch_id' => 'required|exists:branches,id',
+        ]);
+
+        $user->update([
+            'branch_id' => $request->branch_id,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Branch assigned successfully.');
+    }
+
+    public function assignArea($id, User $user) {
+
     }
 }

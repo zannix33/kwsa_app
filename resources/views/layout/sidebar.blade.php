@@ -95,7 +95,7 @@
 
 
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">13th Month Pay</a>
+                      <a class="nav-link" href="{{ url('/reports/thirteenth-month') }}">13th Month Pay</a>
                   </li>
 
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
@@ -125,7 +125,7 @@
       </li>
 
 
-      {{--
+
       <li class="nav-item {{ active_class(['basic-ui/accounting']) }}">
           <a class="nav-link" data-toggle="collapse" href="#operations" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
               <i class="menu-icon mdi mdi-head-cog"></i>
@@ -135,7 +135,10 @@
           <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="operations">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ url('/') }}">Arms Inventory</a>
+                      <a class="nav-link" href="{{ route('incidents.index') }}">Incident Reports</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
+                      <a class="nav-link" href="{{ route('arms.index') }}">Arms Inventory</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">DDO</a>
@@ -143,7 +146,7 @@
               </ul>
           </div>
       </li>
-      --}}
+
 
       {{--
     <li class="nav-item {{ active_class(['basic-ui/*']) }}">
@@ -242,6 +245,7 @@
               </ul>
           </div>
       </li>
+      --}}
 
       <li class="nav-item {{ active_class(['basic-ui/clients']) }}">
           <a class="nav-link" data-toggle="collapse" href="#clients" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
@@ -260,6 +264,6 @@
               </ul>
           </div>
       </li>
-      --}}
+
   </ul>
 </nav>

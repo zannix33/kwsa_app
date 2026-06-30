@@ -6,10 +6,12 @@
 
 @section('content')
 
-    <form action="{{ route('hr.employee.store') }}" method="POST">
+    <form action="{{ route('hr.employee.store') }}"
+          method="POST"
+          enctype="multipart/form-data">
         @csrf
 
-        @include('employee._form')
+        @include('pages.employee._form')
 
         <div class="text-right">
             <a href="{{ route('hr.employee.index') }}"
@@ -27,3 +29,28 @@
 
     </form>
 @endsection
+
+@push('custom-scripts')
+    <script>
+        document.getElementById('photo').addEventListener('change', function(e){
+
+            const file = e.target.files[0];
+
+            if(!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = function(ev){
+
+                let preview = document.getElementById('photo-preview');
+
+                preview.outerHTML =
+                    '<img id="photo-preview" src="'+ev.target.result+'" class="img-thumbnail rounded mb-3" style="width:200px;height:200px;object-fit:cover;">';
+
+            };
+
+            reader.readAsDataURL(file);
+
+        });
+    </script>
+@endpush

@@ -5,7 +5,7 @@
         step="0.01"
         name="from_salary"
         class="form-control"
-        value="{{ old('from_salary', $ss->from_salary ?? '') }}">
+        value="{{ old('from_salary', $sss->from_salary ?? '') }}">
 </div>
 
 <div class="form-group">
@@ -15,7 +15,7 @@
         step="0.01"
         name="to_salary"
         class="form-control"
-        value="{{ old('to_salary', $ss->to_salary ?? '') }}">
+        value="{{ old('to_salary', $sss->to_salary ?? '') }}">
 </div>
 
 <div class="form-group">
@@ -25,7 +25,7 @@
         step="0.01"
         name="employee_share"
         class="form-control"
-        value="{{ old('employee_share', $ss->employee_share ?? '') }}">
+        value="{{ old('employee_share', $sss->employee_share ?? '') }}">
 </div>
 
 <div class="form-group">
@@ -35,7 +35,7 @@
         step="0.01"
         name="employer_share"
         class="form-control"
-        value="{{ old('employer_share', $ss->employer_share ?? '') }}">
+        value="{{ old('employer_share', $sss->employer_share ?? '') }}">
 </div>
 
 <div class="form-group">
@@ -45,7 +45,21 @@
         step="0.01"
         name="ec"
         class="form-control"
-        value="{{ old('ec', $ss->ec ?? 0) }}">
+        value="{{ old('ec', $sss->ec ?? 0) }}">
+</div>
+
+<div class="form-group">
+    <label>Rate</label>
+    <select name="rate"
+            class="form-control">
+        <option value="ncr"
+            >
+            NCR</option>
+        <option value="provincial"
+            >
+            Provincial</option>
+
+    </select>
 </div>
 
 <div class="form-group">

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Area;
 use App\Models\Branch;
+use App\Models\User;
 
 class BranchController extends Controller
 {
@@ -146,14 +147,18 @@ class BranchController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $branch = Branch::findOrFail(
-            $request->branch_id
+        $user = User::findOrFail(
+            $request->user_id
         );
 
-        $branch->users()
-            ->syncWithoutDetaching([
-                $request->user_id
-            ]);
+        $user->update([
+            'branch_id' => $request->branch_id
+        ]);
+
+        //$branch->users()
+        //    ->syncWithoutDetaching([
+        //        $request->user_id
+        //    ]);
 
         return response()->json([
             'success' => true

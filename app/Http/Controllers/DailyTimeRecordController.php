@@ -14,6 +14,8 @@ class DailyTimeRecordController extends Controller
     public function createBulk()
     {
         $users = User::orderBy('lastname')
+            ->whereNotNull('branch_id')
+            ->orWhereNotNull('area_id')
             ->orderBy('firstname')
             ->get();
 

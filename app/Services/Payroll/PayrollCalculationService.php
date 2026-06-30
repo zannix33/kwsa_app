@@ -15,6 +15,7 @@ class PayrollCalculationService
         $maximumRegularHours = 8;
 
         $dailyRate = 450; //$user->monthly_salary / 26;
+        $monthlySalary = $dailyRate * 30;
         $hourlyRate = $dailyRate / 8;
 
         $daysWorked = 0;
@@ -89,6 +90,11 @@ class PayrollCalculationService
             $nightDiffHours *
             ($hourlyRate * 0.10);
 
+        $overallPay =
+            $basicPay +
+            $overtimePay +
+            $nightDiffPay;
+
         /*
         |--------------------------------------------------------------------------
         | Deductions
@@ -102,6 +108,8 @@ class PayrollCalculationService
         $undertimeDeduction =
             ($hourlyRate / 60)
             * $undertimeMinutes;
+
+
 
         return [
 
@@ -118,6 +126,8 @@ class PayrollCalculationService
 
                 'holiday_pay' =>
                     round($holidayPay, 2),
+                'overall_pay' =>
+                    round($overallPay, 2),
 
             ],
 

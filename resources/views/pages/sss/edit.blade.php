@@ -14,7 +14,7 @@
         <div class="card-body">
 
             <form
-                action="{{ route('sss.update',$ss) }}"
+                action="{{ route('sss.update',$sss) }}"
                 method="POST">
 
                 @csrf

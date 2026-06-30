@@ -12,8 +12,8 @@
 */
 
 
-use App\Http\Controllers\AreaController;
-use App\Http\Controllers\BranchController;
+//use App\Http\Controllers\AreaController;
+//use App\Http\Controllers\BranchController;
 //use App\Http\Controllers\PayrollPeriodController;//
 
 Auth::routes();
@@ -40,7 +40,18 @@ Route::group(['middleware' => ['auth']], function () {
     });
 
     Route::resource('areas', AreaController::class);
-    Route::get('/areas/{area}/branches', [AreaController::class, 'branches']);
+    Route::get('/areas/{area}/branches', [\App\Http\Controllers\AreaController::class, 'branches']);
+
+    Route::resource('branches', BranchController::class);
+    Route::get(
+        '/branches/{branch}/guards',
+        [\App\Http\Controllers\BranchController::class, 'guards']
+    );
+
+    Route::post(
+        '/branches/assign-guard',
+        [\App\Http\Controllers\BranchController::class, 'assignGuard']
+    );
 
     //DTR
 
@@ -65,20 +76,9 @@ Route::group(['middleware' => ['auth']], function () {
 
     //Route::resource('dtr', DailyTimeRecordController::class);
 
+    // Settings
 
-
-    Route::resource('branches', BranchController::class);
-    Route::get(
-        '/branches/{branch}/guards',
-        [BranchController::class, 'guards']
-    );
-
-    Route::post(
-        '/branches/assign-guard',
-        [BranchController::class, 'assignGuard']
-    );
-
-    Route::resource('sss-contributions', SssContriController::class);
+    Route::resource('sss-contributions', SssContributionController::class);
 
     Route::resource('payroll-rates', PayrollRateController::class);
 
@@ -121,6 +121,291 @@ Route::group(['middleware' => ['auth']], function () {
         '/payrolls/{payroll}/pdf',
         [\App\Http\Controllers\PayrollController::class, 'pdf']
     )->name('payrolls.pdf');
+
+    // Thirtheenth Month Pay
+    Route::get('/reports/thirteenth-month', [\App\Http\Controllers\ThirteenthMonthController::class, 'index'])
+        ->name('reports.13th.index');
+
+    Route::post('/reports/thirteenth-month', [\App\Http\Controllers\ThirteenthMonthController::class, 'generate'])
+        ->name('reports.13th.generate');
+
+    // Incident Reports
+    Route::get(
+        '/incidents/employee/{user}',
+        [\App\Http\Controllers\IncidentController::class, 'employeeInformation']
+    )->name('incidents.employee');
+
+    Route::get(
+        '/incidents/{incident}/print',
+        [\App\Http\Controllers\IncidentController::class, 'print']
+    )->name('incidents.print');
+
+    Route::delete(
+        '/incident-attachments/{attachment}',
+        [\App\Http\Controllers\IncidentController::class,'deleteAttachment']
+    )->name('incident.attachments.destroy');
+
+    Route::get('/incident-dashboard', [\App\Http\Controllers\IncidentController::class, 'dashboard'])
+        ->name('incidents.dashboard');
+
+    Route::get('/incidents/datatables',
+        [\App\Http\Controllers\IncidentController::class,'datatable'])
+        ->name('incidents.datatable');
+
+    Route::get('/incidents/export/excel',
+        [\App\Http\Controllers\IncidentController::class,'excel'])
+        ->name('incidents.excel');
+
+    Route::get('/incidents/export/pdf',
+        [\App\Http\Controllers\IncidentController::class,'pdf'])
+        ->name('incidents.pdf');
+
+    Route::resource('incidents', IncidentController::class);
+
+    // Arms
+
+    Route::prefix('arms')
+        ->name('arms.')
+        ->group(function () {
+
+            Route::get('/', [\App\Http\Controllers\Arms\ArmController::class,'index'])
+                ->name('index');
+
+            Route::get('/datatable', [\App\Http\Controllers\Arms\ArmController::class,'datatable'])
+                ->name('datatable');
+
+            Route::get('/create', [\App\Http\Controllers\Arms\ArmController::class,'create'])
+                ->name('create');
+
+            Route::post('/', [\App\Http\Controllers\Arms\ArmController::class,'store'])
+                ->name('store');
+
+            Route::get('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'show'])
+                ->name('show');
+
+            Route::get('/{arm}/edit', [\App\Http\Controllers\Arms\ArmController::class,'edit'])
+                ->name('edit');
+
+            Route::put('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'update'])
+                ->name('update');
+
+            Route::delete('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'destroy'])
+                ->name('destroy');
+
+            Route::post('/{arm}/retire', [\App\Http\Controllers\Arms\ArmController::class,'retire'])
+                ->name('retire');
+
+            Route::post('/{arm}/lost', [\App\Http\Controllers\Arms\ArmController::class,'lost'])
+                ->name('lost');
+
+            Route::post('/{arm}/available', [\App\Http\Controllers\Arms\ArmController::class,'available'])
+                ->name('available');
+
+        });
+
+    // Arms Assignment
+
+    Route::prefix('arms/assignments')
+        ->name('arms.assignments.')
+        ->group(function () {
+
+            Route::get('/dashboard', [ArmDashboardController::class, 'index'])
+                ->name('dashboard');
+
+            Route::get('/dashboard/charts', [ArmDashboardController::class, 'charts'])
+                ->name('dashboard.charts');
+
+            Route::get('/dashboard/summary', [ArmDashboardController::class, 'summary'])
+                ->name('dashboard.summary');
+
+
+            Route::get('/', [ArmAssignmentController::class, 'index'])->name('index');
+
+            Route::get('/datatable', [ArmAssignmentController::class, 'datatable'])->name('datatable');
+
+            Route::get('/create', [ArmAssignmentController::class, 'create'])->name('create');
+
+            Route::post('/', [ArmAssignmentController::class, 'store'])->name('store');
+
+            Route::get('/current', [ArmAssignmentController::class, 'current'])->name('current');
+
+            Route::get('/overdue', [ArmAssignmentController::class, 'overdue'])->name('overdue');
+
+            Route::get('/employee/{user}', [ArmAssignmentController::class, 'employee'])->name('employee');
+
+            Route::get('/firearm/{arm}', [ArmAssignmentController::class, 'firearm'])->name('firearm');
+
+            Route::get('/{assignment}', [ArmAssignmentController::class, 'show'])->name('show');
+
+            Route::get('/{assignment}/return', [ArmAssignmentController::class, 'edit'])->name('edit');
+
+            Route::put('/{assignment}', [ArmAssignmentController::class, 'update'])->name('update');
+
+            Route::delete('/{assignment}', [ArmAssignmentController::class, 'destroy'])->name('destroy');
+
+        });
+
+    // Arms Maintenance
+
+    Route::prefix('arms/maintenances')
+        ->name('arms.maintenances.')
+        ->group(function () {
+
+            Route::get('/', [ArmMaintenanceController::class, 'index'])->name('index');
+
+            Route::get('/datatable', [ArmMaintenanceController::class, 'datatable'])->name('datatable');
+
+            Route::get('/create', [ArmMaintenanceController::class, 'create'])->name('create');
+
+            Route::post('/', [ArmMaintenanceController::class, 'store'])->name('store');
+
+            Route::get('/due', [ArmMaintenanceController::class, 'due'])->name('due');
+
+            Route::get('/firearm/{arm}', [ArmMaintenanceController::class, 'firearm'])->name('firearm');
+
+            Route::get('/{maintenance}', [ArmMaintenanceController::class, 'show'])->name('show');
+
+            Route::get('/{maintenance}/edit', [ArmMaintenanceController::class, 'edit'])->name('edit');
+
+            Route::put('/{maintenance}', [ArmMaintenanceController::class, 'update'])->name('update');
+
+            Route::delete('/{maintenance}', [ArmMaintenanceController::class, 'destroy'])->name('destroy');
+
+            Route::post('/{maintenance}/complete', [ArmMaintenanceController::class, 'complete'])->name('complete');
+
+        });
+
+    //Arm Inspection
+
+    Route::prefix('arms/inspections')
+        ->name('arms.inspections.')
+        ->group(function () {
+
+            Route::get('/', [ArmInspectionController::class, 'index'])->name('index');
+
+            Route::get('/datatable', [ArmInspectionController::class, 'datatable'])->name('datatable');
+
+            Route::get('/create', [ArmInspectionController::class, 'create'])->name('create');
+
+            Route::post('/', [ArmInspectionController::class, 'store'])->name('store');
+
+            Route::get('/due', [ArmInspectionController::class, 'due'])->name('due');
+
+            Route::get('/failed', [ArmInspectionController::class, 'failed'])->name('failed');
+
+            Route::get('/passed', [ArmInspectionController::class, 'passed'])->name('passed');
+
+            Route::get('/firearm/{arm}', [ArmInspectionController::class, 'firearm'])->name('firearm');
+
+            Route::get('/{inspection}', [ArmInspectionController::class, 'show'])->name('show');
+
+            Route::get('/{inspection}/edit', [ArmInspectionController::class, 'edit'])->name('edit');
+
+            Route::put('/{inspection}', [ArmInspectionController::class, 'update'])->name('update');
+
+            Route::delete('/{inspection}', [ArmInspectionController::class, 'destroy'])->name('destroy');
+
+        });
+
+    // Arm License
+    Route::prefix('arms/licenses')
+        ->name('arms.licenses.')
+        ->group(function () {
+
+            Route::get('/', [ArmLicenseController::class, 'index'])->name('index');
+
+            Route::get('/datatable', [ArmLicenseController::class, 'datatable'])->name('datatable');
+
+            Route::get('/create', [ArmLicenseController::class, 'create'])->name('create');
+
+            Route::post('/', [ArmLicenseController::class, 'store'])->name('store');
+
+            Route::get('/expired', [ArmLicenseController::class, 'expired'])->name('expired');
+
+            Route::get('/expiring', [ArmLicenseController::class, 'expiring'])->name('expiring');
+
+            Route::get('/firearm/{arm}', [ArmLicenseController::class, 'firearm'])->name('firearm');
+
+            Route::post('/{license}/renew', [ArmLicenseController::class, 'renew'])->name('renew');
+
+            Route::get('/{license}', [ArmLicenseController::class, 'show'])->name('show');
+
+            Route::get('/{license}/edit', [ArmLicenseController::class, 'edit'])->name('edit');
+
+            Route::put('/{license}', [ArmLicenseController::class, 'update'])->name('update');
+
+            Route::delete('/{license}', [ArmLicenseController::class, 'destroy'])->name('destroy');
+
+        });
+
+    // Ammunition Routes
+
+    Route::prefix('arms/ammunition')
+        ->name('arms.ammunition.')
+        ->group(function () {
+
+            Route::get('/', [AmmunitionController::class, 'index'])->name('index');
+
+            Route::get('/datatable', [AmmunitionController::class, 'datatable'])->name('datatable');
+
+            Route::get('/create', [AmmunitionController::class, 'create'])->name('create');
+
+            Route::post('/', [AmmunitionController::class, 'store'])->name('store');
+
+            Route::get('/low-stock', [AmmunitionController::class, 'lowStock'])->name('low-stock');
+
+            Route::get('/expired', [AmmunitionController::class, 'expired'])->name('expired');
+
+            Route::get('/valuation', [AmmunitionController::class, 'valuation'])->name('valuation');
+
+            Route::get('/{ammunition}', [AmmunitionController::class, 'show'])->name('show');
+
+            Route::get('/{ammunition}/edit', [AmmunitionController::class, 'edit'])->name('edit');
+
+            Route::put('/{ammunition}', [AmmunitionController::class, 'update'])->name('update');
+
+            Route::delete('/{ammunition}', [AmmunitionController::class, 'destroy'])->name('destroy');
+
+            Route::post('/{ammunition}/receive', [AmmunitionController::class, 'receive'])->name('receive');
+
+            Route::post('/{ammunition}/adjust', [AmmunitionController::class, 'adjust'])->name('adjust');
+
+        });
+
+    // Ammunition Releases
+
+    Route::prefix('arms/ammunition-releases')
+        ->name('arms.ammunition-releases.')
+        ->group(function () {
+
+            Route::get('/', [AmmunitionReleaseController::class,'index'])->name('index');
+
+            Route::get('/datatable', [AmmunitionReleaseController::class,'datatable'])->name('datatable');
+
+            Route::get('/create', [AmmunitionReleaseController::class,'create'])->name('create');
+
+            Route::post('/', [AmmunitionReleaseController::class,'store'])->name('store');
+
+            Route::get('/outstanding', [AmmunitionReleaseController::class,'outstanding'])->name('outstanding');
+
+            Route::get('/employee/{user}', [AmmunitionReleaseController::class,'employee'])->name('employee');
+
+            Route::get('/ammunition/{ammunition}', [AmmunitionReleaseController::class,'ammunition'])->name('ammunition');
+
+            Route::get('/{ammunitionRelease}', [AmmunitionReleaseController::class,'show'])->name('show');
+
+            Route::get('/{ammunitionRelease}/return', [AmmunitionReleaseController::class,'edit'])->name('edit');
+
+            Route::put('/{ammunitionRelease}', [AmmunitionReleaseController::class,'update'])->name('update');
+
+            Route::delete('/{ammunitionRelease}', [AmmunitionReleaseController::class,'destroy'])->name('destroy');
+
+        });
+
+    // Arms
+    //Route::resource('arms', ArmController::class);
+    //Route::get('arms/datatable',[ArmController::class,'datatable'])
+    //    ->name('arms.datatable');
 
 
     Route::group(['prefix' => 'basic-ui'], function(){
