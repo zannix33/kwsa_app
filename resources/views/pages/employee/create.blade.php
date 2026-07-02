@@ -13,6 +13,8 @@
 
         @include('pages.employee._form')
 
+        <br>
+
         <div class="text-right">
             <a href="{{ route('hr.employee.index') }}"
                class="btn btn-secondary">

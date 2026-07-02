@@ -144,7 +144,7 @@ class EmployeeController extends Controller
             'city' => 'nullable|string|max:255',
             'province' => 'nullable|string|max:255',
 
-            'email' => 'required|email|unique:employees,email',
+            'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|numeric',
 
             'religion' => 'nullable|string|max:255',

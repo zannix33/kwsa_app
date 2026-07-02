@@ -291,16 +291,3 @@
     </div>
 
 </div>
-
-<div class="mt-4 text-right">
-
-    <a href="{{ route('hr.employee.index') }}"
-       class="btn btn-secondary">
-        Cancel
-    </a>
-
-    <button class="btn btn-primary">
-        Save Employee
-    </button>
-
-</div>
