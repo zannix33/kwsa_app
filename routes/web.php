@@ -316,7 +316,7 @@ Route::group(['middleware' => ['auth']], function () {
 
             Route::get('/datatable', [ArmLicenseController::class, 'datatable'])->name('datatable');
 
-            Route::get('/create', [ArmLicenseController::class, 'create'])->name('create');
+            Route::get('/create', [\App\Http\Controllers\Arms\ArmLicenseController::class, 'create'])->name('create');
 
             Route::post('/', [ArmLicenseController::class, 'store'])->name('store');
 

@@ -5,8 +5,35 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5b283f72-1408-4aa0-93b7-1eb4430a0b98" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/ammunition-releases/index.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/ammunition/cards.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/ammunition/datatable.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/ammunition/index.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/licenses/_form.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/licenses/cards.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/licenses/datatable.blade.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/views/pages/arms/licenses/index.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kwsa_app.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kwsa_app.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/views/auth/login.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/auth/login.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Http/Controllers/AreaController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Controllers/AreaController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Http/Controllers/Arms/ArmLicenseController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Controllers/Arms/ArmLicenseController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Http/Controllers/EmployeeController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Controllers/EmployeeController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Models/Area.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Models/Area.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Models/Arm.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Models/Arm.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Models/Branch.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Models/Branch.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Models/User.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Models/User.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Services/Arms/ArmService.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Services/Arms/ArmService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Services/Payroll/PayrollCalculationService.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Services/Payroll/PayrollCalculationService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Services/Payroll/PayrollGenerationService.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Services/Payroll/PayrollGenerationService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Services/PayrollItemService.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Services/PayrollItemService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/2026_06_10_203822_create_areas_table.php" beforeDir="false" afterPath="$PROJECT_DIR$/database/migrations/2026_06_10_203822_create_areas_table.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/pages/arms/arms/_form.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/pages/arms/arms/_form.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/pages/arms/arms/datatable.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/pages/arms/arms/datatable.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/pages/client/show.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/pages/client/show.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/pages/employee/_form.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/pages/employee/_form.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/pages/employee/show.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/pages/employee/show.blade.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/web.php" beforeDir="false" afterPath="$PROJECT_DIR$/routes/web.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,7 +44,15 @@
     <pharConfigPath>$PROJECT_DIR$/composer.json</pharConfigPath>
     <execution />
   </component>
+  <component name="Git.Merge.Settings">
+    <option name="BRANCH" value="mian" />
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="mian" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -126,6 +161,22 @@
       <path value="$PROJECT_DIR$/vendor/sebastian/complexity" />
       <path value="$PROJECT_DIR$/vendor/sebastian/code-unit" />
       <path value="$PROJECT_DIR$/vendor/fideloper/proxy" />
+      <path value="$PROJECT_DIR$/vendor/spatie/laravel-permission" />
+      <path value="$PROJECT_DIR$/vendor/fruitcake/laravel-debugbar" />
+      <path value="$PROJECT_DIR$/vendor/maximebf/debugbar" />
+      <path value="$PROJECT_DIR$/vendor/yajra/laravel-datatables-oracle" />
+      <path value="$PROJECT_DIR$/vendor/dompdf/dompdf" />
+      <path value="$PROJECT_DIR$/vendor/phenx/php-font-lib" />
+      <path value="$PROJECT_DIR$/vendor/phenx/php-svg-lib" />
+      <path value="$PROJECT_DIR$/vendor/sabberworm/php-css-parser" />
+      <path value="$PROJECT_DIR$/vendor/barryvdh/laravel-dompdf" />
+      <path value="$PROJECT_DIR$/vendor/masterminds/html5" />
+      <path value="$PROJECT_DIR$/vendor/maennchen/zipstream-php" />
+      <path value="$PROJECT_DIR$/vendor/phpoffice/phpspreadsheet" />
+      <path value="$PROJECT_DIR$/vendor/maatwebsite/excel" />
+      <path value="$PROJECT_DIR$/vendor/markbaker/matrix" />
+      <path value="$PROJECT_DIR$/vendor/markbaker/complex" />
+      <path value="$PROJECT_DIR$/vendor/ezyang/htmlpurifier" />
     </include_path>
   </component>
   <component name="ProjectId" id="3DPyAiAew4zRRipThCLPYZJuOrN" />
@@ -139,7 +190,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/app/Http/Controllers" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.stylelint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
@@ -151,7 +202,18 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="F:\brownpaperbag\code\kwsa_app\app\Http\Controllers" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\sss_contri" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\client" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\employee" />
       <recent name="F:\brownpaperbag\code\kwsa_app" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\arms\arms" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\app\Http\Controllers\Arms" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\arms" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\incidents\partials" />
+      <recent name="F:\brownpaperbag\code\kwsa_app\resources\views\pages\dtr\partials" />
     </key>
   </component>
   <component name="RunManager">
@@ -175,7 +237,12 @@
       <workItem from="1779095719806" duration="2909000" />
       <workItem from="1779347422106" duration="1291000" />
       <workItem from="1779973027256" duration="2460000" />
-      <workItem from="1780086071363" duration="3369000" />
+      <workItem from="1780086071363" duration="9533000" />
+      <workItem from="1781123571510" duration="8703000" />
+      <workItem from="1781725376543" duration="11653000" />
+      <workItem from="1781926217277" duration="102800000" />
+      <workItem from="1782782706845" duration="16094000" />
+      <workItem from="1783567536319" duration="13166000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1780093278545</created>
@@ -184,7 +251,126 @@
       <option name="project" value="LOCAL" />
       <updated>1780093278545</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="login Changes">
+      <created>1780094111446</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1780094111446</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Changes">
+      <created>1781125169665</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1781125169665</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Calcutations">
+      <created>1782448978591</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1782448978591</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Sidebar Changes">
+      <created>1782452041346</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1782452041346</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Sidebar Changes">
+      <created>1782452731040</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1782452731040</updated>
+    </task>
+    <task id="LOCAL-00007" summary="DataTable Fix">
+      <created>1782453697454</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1782453697454</updated>
+    </task>
+    <task id="LOCAL-00008" summary="DataTable Fix">
+      <created>1782454659182</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1782454659182</updated>
+    </task>
+    <task id="LOCAL-00009" summary="special holiday and extended hours">
+      <created>1782460746541</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1782460746541</updated>
+    </task>
+    <task id="LOCAL-00010" summary="datatable test fix">
+      <created>1782466103889</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466103889</updated>
+    </task>
+    <task id="LOCAL-00011" summary="datatable test fix">
+      <created>1782466175481</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466175481</updated>
+    </task>
+    <task id="LOCAL-00012" summary="datatable test fix">
+      <created>1782466567068</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466567068</updated>
+    </task>
+    <task id="LOCAL-00013" summary="datatable test fix">
+      <created>1782466599755</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466599755</updated>
+    </task>
+    <task id="LOCAL-00014" summary="datatable test fix">
+      <created>1782466656516</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466656516</updated>
+    </task>
+    <task id="LOCAL-00015" summary="datatable test fix">
+      <created>1782466675539</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1782466675539</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Changes and upgrades">
+      <created>1782786897186</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1782786897186</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Changes in arms">
+      <created>1782923971240</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1782923971240</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Changes in arms">
+      <created>1782971620155</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1782971620155</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,6 +378,15 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
+    <MESSAGE value="login Changes" />
+    <MESSAGE value="Changes" />
+    <MESSAGE value="Calcutations" />
+    <MESSAGE value="Sidebar Changes" />
+    <MESSAGE value="DataTable Fix" />
+    <MESSAGE value="special holiday and extended hours" />
+    <MESSAGE value="datatable test fix" />
+    <MESSAGE value="Changes and upgrades" />
+    <MESSAGE value="Changes in arms" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes in arms" />
   </component>
 </project>

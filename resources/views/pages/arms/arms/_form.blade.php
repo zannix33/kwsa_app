@@ -18,6 +18,17 @@
 
             <div class="card-body">
 
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>Please correct the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="row">
 
                     <div class="form-group col-md-4">
@@ -36,7 +47,7 @@
                     <div class="form-group col-md-4">
                         <label>Serial Number</label>
                         <input type="text"
-                               name="serial_number"
+                               name="serial_no"
                                class="form-control"
                                value="{{ old('serial_number', $arm->serial_number ?? '') }}">
                     </div>

@@ -32,8 +32,10 @@
                             {{ $employee->lastname }}
                         </h3>
 
+
+
                         <p class="text-muted">
-                            {{ $employee->position }}
+                            {{ @$employee->position->name }}
                         </p>
 
                         <hr>
@@ -43,6 +45,10 @@
                             <tr>
                                 <th width="45%">Employee No.</th>
                                 <td>{{ $employee->name }}</td>
+                            </tr>
+                            <tr>
+                                <td>Department</td>
+                                <td>{{ $employee->department_type }}</td>
                             </tr>
 
                             <tr>
@@ -69,6 +75,7 @@
                                 <th>Date Hired</th>
                                 <td>{{ $employee->date_hired?->format('F d, Y') }}</td>
                             </tr>
+
 
                         </table>
 
@@ -292,11 +299,6 @@
                     <div class="card-body">
 
                         <table class="table table-bordered">
-
-                            <tr>
-                                <th width="25%">Position</th>
-                                <td>{{ $employee->position }}</td>
-                            </tr>
 
                             <tr>
                                 <th>LESP Number</th>

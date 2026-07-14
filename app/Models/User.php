@@ -40,7 +40,7 @@ class User extends Authenticatable
         'pagibig',
         'philhealth',
         'bloodtype',
-        'position',
+        'position_id',
         'lesp_num',
         'lesp_issued',
         'lesp_expiry',
@@ -49,6 +49,7 @@ class User extends Authenticatable
         'branch_id',
         'area_id',
         'photo',
+        'department_type',
     ];
 
     /**
@@ -137,5 +138,27 @@ class User extends Authenticatable
     public function ammunitionReleases()
     {
         return $this->hasMany(AmmunitionRelease::class);
+    }
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function getDailyRateAttribute() {
+        $rate = 0;
+
+        if($this->branch) {
+            $rate = $this->branch->area->rate;
+            $rate = PayrollRate::where('slug', ($rate ? $rate : 'ncr'))->first()->rate;
+        }
+
+        if($this->area) {
+            $rate = $this->area->rate;
+            $rate = PayrollRate::where('slug', ($rate ? $rate : 'ncr'))->first()->rate;
+        }
+
+         return $rate;
+
     }
 }

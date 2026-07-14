@@ -18,7 +18,7 @@ class CreateAreasTable extends Migration
             $table->foreignId('client_id');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->double('rate')->nullable();
+            $table->string('rate')->default('ncr')->nullable();
             $table->timestamps();
         });
     }

@@ -8,28 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Arm extends Model
 {
     protected $fillable = [
-
         'property_no',
         'serial_no',
-
-        'make',
         'model',
         'caliber',
         'type',
         'color',
-
         'purchase_date',
         'purchase_cost',
-
         'supplier',
         'manufacturer',
-
         'branch_id',
-
         'status',
-
         'remarks'
-
     ];
 
     protected $casts = [

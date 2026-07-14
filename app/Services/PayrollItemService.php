@@ -9,6 +9,7 @@ class PayrollItemService
 {
     const BASIC = 'BASIC';
     const OT = 'OT';
+    const SOT = 'SOT';
     const ND = 'ND';
     const HOLIDAY = 'HOLIDAY';
     const REGHOLIDAY = 'REGHOLIDAY';

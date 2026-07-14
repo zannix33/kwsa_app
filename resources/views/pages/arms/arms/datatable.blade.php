@@ -37,13 +37,13 @@
                 },
 
                 {
-                    data: 'serial_number',
-                    name: 'serial_number'
+                    data: 'serial_no',
+                    name: 'serial_no'
                 },
 
                 {
-                    data: 'full_name',
-                    name: 'full_name'
+                    data: 'type',
+                    name: 'type'
                 },
 
                 {

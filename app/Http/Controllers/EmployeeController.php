@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Position;
 use Illuminate\Http\Request;
 
 use App\Models\User;
@@ -122,7 +123,13 @@ class EmployeeController extends Controller
     {
         //$employee = User::findOrFail($id);
 
-        return view('pages.employee.create');
+        $positions = Position::where('active',1)
+            ->orderBy('name')
+            ->get();
+
+
+
+        return view('pages.employee.create',compact('positions'));
     }
 
     /**
@@ -170,14 +177,14 @@ class EmployeeController extends Controller
 
             'bloodtype' => 'nullable|string|max:10',
 
-            'position' => 'nullable|string|max:255',
-
             'lesp_num' => 'nullable|string|max:255',
             'lesp_issued' => 'nullable|string|max:255',
             'lesp_expiry' => 'nullable|date',
 
             'date_hired' => 'nullable|date',
             'dt_date' => 'nullable|date',
+            'department_type' => 'required|in:Admin,Operations',
+            'position_id'      => 'required|exists:positions,id',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -223,7 +230,13 @@ class EmployeeController extends Controller
     {
         $employee = User::findOrFail($id);
 
-        return view('pages.employee.edit', compact('employee'));
+        $positions = Position::where('active',1)
+            ->orderBy('name')
+            ->get();
+
+
+
+        return view('pages.employee.edit', compact('employee', 'positions'));
     }
 
     /**
@@ -274,8 +287,6 @@ class EmployeeController extends Controller
 
             'bloodtype' => 'nullable|string|max:10',
 
-            'position' => 'nullable|string|max:255',
-
             'lesp_num' => 'nullable|string|max:255',
             'lesp_issued' => 'nullable|string|max:255',
             'lesp_expiry' => 'nullable|date',
@@ -284,6 +295,8 @@ class EmployeeController extends Controller
             'dt_date' => 'nullable|date',
 
             'password' => 'nullable|min:8',
+            'department_type' => 'required|in:Admin,Operations',
+            'position_id'      => 'required|exists:positions,id',
         ]);
 
         if ($request->hasFile('photo')) {

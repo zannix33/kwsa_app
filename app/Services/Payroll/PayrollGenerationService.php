@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use App\Models\DailyTimeRecord;
+use App\Models\PayrollRate;
 use App\Services\PayrollItemService;
 use Illuminate\Support\Facades\DB;
 
@@ -156,10 +157,21 @@ class PayrollGenerationService
             $payroll,
             'OT',
             'Overtime Pay',
-            $result['earnings']['overtime_pay'],
+            $result['earnings']['regular_overtime_pay'],
             $result['metrics']['overtime_hours'],
             $result['metrics']['hourly_rate'] * 1.25
         );
+
+        PayrollItemService::earning(
+            $payroll,
+            'SOT',
+            'Special/Sunday Overtime Pay',
+            $result['earnings']['special_overtime_pay'],
+            $result['metrics']['overtime_hours'],
+            $result['metrics']['hourly_rate'] * 1.25
+        );
+
+
 
         PayrollItemService::earning(
             $payroll,
@@ -176,6 +188,15 @@ class PayrollGenerationService
             'Holiday Pay',
             $result['earnings']['holiday_pay']
         );
+
+        PayrollItemService::earning(
+            $payroll,
+            'HOLIDAY',
+            'Special Holiday Pay',
+            $result['earnings']['sp_holiday_pay']
+        );
+
+
 
         /*
         |--------------------------------------------------------------------------
@@ -214,6 +235,9 @@ class PayrollGenerationService
             $result['earnings']['overall_pay']
         );
 
+        $pagibigRate = PayrollRate::where('slug', 'pagibig')->first()->rate;
+        $philhealthRate = PayrollRate::where('slug', 'philhealth')->first()->rate;
+
         PayrollItemService::deduction(
             $payroll,
             'SSS',
@@ -225,14 +249,14 @@ class PayrollGenerationService
             $payroll,
             'PHIC',
             'PhilHealth Contribution',
-            250
+            $philhealthRate
         );
 
         PayrollItemService::deduction(
             $payroll,
             'PAGIBIG',
             'PagIBIG Contribution',
-            200
+            $pagibigRate
         );
 
         /*

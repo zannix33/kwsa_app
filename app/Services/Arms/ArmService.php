@@ -39,6 +39,17 @@ class ArmService
 
         return DataTables::eloquent($query)
 
+            ->addColumn('photo', function ($arm) {
+
+                if ($arm->photo && Storage::disk('public')->exists($arm->photo)) {
+                    return '<img src="'.asset('storage/'.$arm->photo).'" width="60" class="img-thumbnail">';
+                }
+
+                return '<span class="text-muted">No Photo</span>';
+            })
+
+            ->rawColumns(['photo'])
+
             ->addColumn('branch', function ($arm) {
                 return optional($arm->branch)->name;
             })
@@ -47,7 +58,7 @@ class ArmService
                 return optional($arm->currentHolder)->name ?? '-';
             })
 
-            ->addColumn('license', function ($arm) {
+            /*->addColumn('license', function ($arm) {
                 return optional($arm->activeLicense)->license_number;
             })
 
@@ -55,11 +66,11 @@ class ArmService
                 return optional($arm->activeLicense?->expiry_date)
                     ? $arm->activeLicense->expiry_date->format('M d, Y')
                     : '-';
-            })
+            })*/
 
-            ->addColumn('actions', function ($arm) {
-                return view('arms.datatables.actions', compact('arm'));
-            })
+            //->addColumn('actions', function ($arm) {
+            //    return view('pages.arms.datatables.actions', compact('arm'));
+            //})
 
             ->rawColumns(['actions'])
 
@@ -175,8 +186,6 @@ class ArmService
                     'max:255',
                     'unique:arms,serial_no,' . $id
                 ],
-
-                'make' => 'required|max:255',
 
                 'model' => 'required|max:255',
 

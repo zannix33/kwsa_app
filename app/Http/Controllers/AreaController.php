@@ -45,7 +45,7 @@ class AreaController extends Controller
             'client_id' => 'required|exists:clients,id',
             'name' => 'required',
             'description' => 'nullable',
-            'rate' => 'nullable|numeric',
+            'rate' => 'required|in:ncr,provincial',
         ]);
 
         $area = Area::create($request->all());

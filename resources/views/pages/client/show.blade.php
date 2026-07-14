@@ -214,8 +214,28 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Rate</label>
-                            <input type="number" step="0.01" name="rate" class="form-control">
+                            <label>Rate Type</label>
+
+                            <select name="rate"
+                                    class="form-control @error('rate') is-invalid @enderror">
+
+                                <option value="">Select Rate Type</option>
+
+                                <option value="ncr"
+                                    {{ old('rate', $area->rate ?? '') == 'NCR' ? 'selected' : '' }}>
+                                    NCR
+                                </option>
+
+                                <option value="provincial"
+                                    {{ old('rate', $area->rate ?? '') == 'Provincial' ? 'selected' : '' }}>
+                                    Provincial
+                                </option>
+
+                            </select>
+
+                            @error('rate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                     </div>

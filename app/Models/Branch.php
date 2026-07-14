@@ -24,6 +24,11 @@ class Branch extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
     /*
     public function users()
     {

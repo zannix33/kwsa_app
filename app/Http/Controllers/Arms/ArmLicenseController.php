@@ -38,7 +38,7 @@ class ArmLicenseController extends Controller
      */
     public function create()
     {
-        return view('arms.licenses.create', [
+        return view('pages.arms.licenses.create', [
 
             'arms' => Arm::orderBy('property_no')->get()
 

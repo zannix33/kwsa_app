@@ -189,12 +189,46 @@
 
                 <div class="form-row">
 
-                    <div class="form-group col-md-4">
+                    <div class="form-group">
+                        <label for="department_type">Department Type</label>
+                        <select name="department_type" id="department_type" class="form-control @error('department_type') is-invalid @enderror">
+                            <option value="">-- Select Department --</option>
+                            <option value="Admin"
+                                {{ old('department_type', $employee->department_type ?? 'Operations') == 'Admin' ? 'selected' : '' }}>
+                                Admin
+                            </option>
+                            <option value="Operations"
+                                {{ old('department_type', $employee->department_type ?? 'Operations') == 'Operations' ? 'selected' : '' }}>
+                                Operations
+                            </option>
+                        </select>
+
+                        @error('department_type')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
                         <label>Position</label>
-                        <input type="text"
-                               name="position"
-                               class="form-control"
-                               value="{{ old('position', optional($employee)->position) }}">
+
+                        <select name="position_id"
+                                class="form-control @error('position_id') is-invalid @enderror"
+                                required>
+
+                            <option value="">-- Select Position --</option>
+
+                            @foreach($positions as $position)
+                                <option value="{{ $position->id }}"
+                                    {{ old('position_id', $employee->position_id ?? '') == $position->id ? 'selected' : '' }}>
+                                    {{ $position->name }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                        @error('position_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="form-group col-md-4">
