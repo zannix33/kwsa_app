@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // $this->call(UsersTableSeeder::class);
-        //$this->call(UserSeeder::class);
+        $this->call(UserSeeder::class);
         //$this->call(EmployeeSeeder::class);
-        $this->call(Position::class);
+        $this->call(PositionSeeder::class);
     }
 }
