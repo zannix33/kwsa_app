@@ -39,8 +39,17 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('companies', CompanyController::class);
     });
 
-    Route::resource('areas', AreaController::class);
+    Route::post(
+        '/areas/assign-guard',
+        [\App\Http\Controllers\AreaController::class, 'assignGuard']
+    )->name('areas.assign.guard');
+
     Route::get('/areas/{area}/branches', [\App\Http\Controllers\AreaController::class, 'branches']);
+
+    Route::get('/areas/{area}/guards', [\App\Http\Controllers\AreaController::class, 'guards']);
+
+    Route::resource('areas', AreaController::class);
+
 
     Route::resource('branches', BranchController::class);
     Route::get(

@@ -248,6 +248,10 @@
                             <div class="col-md-6">
 
                                 <table class="table table-bordered">
+                                    <tr>
+                                        <th>Micro Savings Account No.</th>
+                                        <td>{{ $employee->micro_savings_account_no }}</td>
+                                    </tr>
 
                                     <tr>
                                         <th>SSS</th>

@@ -46,10 +46,11 @@ class User extends Authenticatable
         'lesp_expiry',
         'date_hired',
         'dt_date',
-        'branch_id',
-        'area_id',
         'photo',
         'department_type',
+        'employee_no',
+        'lesp_category',
+        'micro_savings_account_no',
     ];
 
     /**
@@ -75,6 +76,27 @@ class User extends Authenticatable
         'lesp_expiry' => 'datetime:Y-m-d',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+
+            $nextId = static::max('id') + 1;
+
+            $user->employee_no = 'KSA-'.str_pad($nextId, 6, '0', STR_PAD_LEFT);
+
+            $user->name = trim(
+                $user->firstname.' '.$user->lastname
+            );
+        });
+
+        static::updating(function ($user) {
+
+            $user->name = trim(
+                $user->firstname.' '.$user->lastname
+            );
+        });
+    }
+
     public function scopeNearAgeRestriction($query, $retirementAge = 55)
     {
         $minBirthdate = Carbon::today()->subYears($retirementAge);
@@ -86,21 +108,10 @@ class User extends Authenticatable
         ]);
     }
 
-    /*
-
     public function branches()
     {
-        return $this->belongsToMany(
-            Branch::class,
-            'branch_user'
-        )->withTimestamps();
-    }
-
-    */
-
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsToMany(Branch::class)
+            ->withTimestamps();
     }
 
     public function area()
@@ -159,6 +170,11 @@ class User extends Authenticatable
         }
 
          return $rate;
+    }
 
+    public function areas()
+    {
+        return $this->belongsToMany(Area::class)
+            ->withTimestamps();
     }
 }

@@ -110,14 +110,27 @@
 
                 <div class="card">
 
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Areas</span>
+                    <div class="card-header d-flex justify-content-between">
 
-                        <button class="btn btn-sm btn-primary"
-                                data-toggle="modal"
-                                data-target="#areaModal">
-                            + Create
-                        </button>
+                        <div>
+                            <strong>Areas</strong>
+                        </div>
+
+                        <div>
+
+                            <button class="btn btn-success btn-sm"
+                                    id="btnAssignAreaGuard">
+                                Assign Guard
+                            </button>
+
+                            <button class="btn btn-primary btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#areaModal">
+                                Create
+                            </button>
+
+                        </div>
+
                     </div>
 
                     <ul class="list-group list-group-flush" id="areas-list">
@@ -139,8 +152,6 @@
 
             <!-- RIGHT: BRANCHES -->
             <div class="col-md-4">
-
-
 
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -250,6 +261,63 @@
             </form>
 
         </div>
+    </div>
+
+    {{-- Area Guard AssignmentModal --}}
+
+    <div class="modal fade" id="assignAreaGuardModal">
+
+        <div class="modal-dialog">
+
+            <form id="assignAreaGuardForm">
+
+                @csrf
+
+                <input type="hidden"
+                       id="assign_area_id"
+                       name="area_id">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5>Assign Guard to Area</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="form-group">
+
+                            <label>Guard</label>
+
+                            <select class="form-control"
+                                    name="user_id">
+
+                                @foreach($guards as $guard)
+                                    <option value="{{ $guard->id }}">
+                                        {{ $guard->firstname }} {{ $guard->lastname }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button class="btn btn-primary">
+                            Assign
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
     </div>
 
     <div class="modal fade" id="branchModal">
@@ -378,7 +446,10 @@
                 $(this).addClass('active');
 
                 loadBranches(selectedAreaId);
+                loadAreaGuards(selectedAreaId);
             });
+
+
 
             // CREATE AREA (AJAX)
             $('#areaForm').on('submit', function (e) {
@@ -408,6 +479,59 @@
                 });
 
             });
+
+            function loadAreaGuards(areaId)
+            {
+                $('#guards-container').html('<p>Loading guards...</p>');
+
+                $.get('/areas/' + areaId + '/guards', function (guards) {
+
+                    let html = '';
+
+                    if (guards.length === 0) {
+
+                        html = `
+                <div class="alert alert-light">
+                    No guards assigned to this area.
+                </div>
+            `;
+
+                    } else {
+
+                        html = `
+                <table class="table table-sm table-hover table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Employee No.</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+                        guards.forEach(function (guard) {
+
+                            html += `
+                    <tr>
+                        <td>${guard.employee_no ?? ''}</td>
+                        <td>${guard.name}</td>
+                        <td>${guard.position ? guard.position.name : ''}</td>
+                    </tr>
+                `;
+
+                        });
+
+                        html += `
+                    </tbody>
+                </table>
+            `;
+                    }
+
+                    $('#guards-container').html(html);
+
+                });
+            }
 
             function loadBranches(selectedAreaId) {
 
@@ -574,6 +698,51 @@
             });
 
         });
+
+        let selectedAreaId = null;
+
+        $(document).on('click', '.area-item', function(){
+
+            selectedAreaId = $(this).data('id');
+
+            $('.area-item').removeClass('active');
+            $(this).addClass('active');
+
+            loadBranches(selectedAreaId);
+
+        });
+
+        $('#btnAssignAreaGuard').click(function(){
+
+            if(selectedAreaId == null)
+            {
+                alert('Please select an area first.');
+                return;
+            }
+
+            $('#assign_area_id').val(selectedAreaId);
+
+            $('#assignAreaGuardModal').modal('show');
+
+        });
+
+        $(document).on('submit','#assignAreaGuardForm',function(e){
+
+            e.preventDefault();
+
+            $.post(
+                "{{ route('areas.assign.guard') }}",
+                $(this).serialize(),
+                function(){
+
+                    $('#assignAreaGuardModal').modal('hide');
+
+                }
+            );
+
+        });
+
+
 
 
     </script>

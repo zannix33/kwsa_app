@@ -54,5 +54,6 @@
             reader.readAsDataURL(file);
 
         });
+
     </script>
 @endpush

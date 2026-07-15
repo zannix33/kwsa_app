@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
-//use Yajra\DataTables\Facades\DataTables;
-use Yajra\Datatables\Datatables;
+use Yajra\DataTables\Facades\DataTables;
+//use Yajra\Datatables\Datatables;
 
 
 class EmployeeController extends Controller
@@ -24,11 +24,7 @@ class EmployeeController extends Controller
     {
         if ($request->ajax()) {
 
-            $query = User::query();
-
-            if ($request->filled('position')) {
-                $query->where('position', $request->position);
-            }
+            $query = User::with('position');
 
             if ($request->filled('branch_id')) {
                 $query->where('branch_id', $request->branch_id);
@@ -53,6 +49,10 @@ class EmployeeController extends Controller
             return DataTables::eloquent($query)
 
                 ->addIndexColumn()
+
+                ->addColumn('position', function ($row) {
+                    return optional($row->position)->name;
+                })
 
                 ->addColumn('photo', function ($row) {
 
@@ -143,7 +143,6 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'name' => 'required|string|max:255',
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
@@ -186,6 +185,8 @@ class EmployeeController extends Controller
             'dt_date' => 'nullable|date',
             'department_type' => 'required|in:Admin,Operations',
             'position_id'      => 'required|exists:positions,id',
+            'lesp_category' => 'nullable|in:SO,SG,SM,BAG',
+            'micro_savings_account_no' => 'nullable|string|max:50',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -254,7 +255,6 @@ class EmployeeController extends Controller
 
         $validated = $request->validate([
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'name' => 'required|string|max:255',
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
@@ -298,6 +298,8 @@ class EmployeeController extends Controller
             'password' => 'nullable|min:8',
             'department_type' => 'required|in:Admin,Operations',
             'position_id'      => 'required|exists:positions,id',
+            'lesp_category' => 'nullable|in:SO,SG,SM,BAG',
+            'micro_savings_account_no' => 'nullable|string|max:50',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -345,17 +347,21 @@ class EmployeeController extends Controller
 
     public function assignBranch(Request $request, User $user)
     {
-        $request->validate([
+        $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
+            'user_id'   => 'required|exists:users,id',
         ]);
 
-        $user->update([
-            'branch_id' => $request->branch_id,
+        $branch = Branch::findOrFail($validated['branch_id']);
+
+        $branch->users()->syncWithoutDetaching([
+            $validated['user_id']
         ]);
 
-        return redirect()
-            ->back()
-            ->with('success', 'Branch assigned successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Guard assigned successfully.'
+        ]);
     }
 
     public function assignArea($id, User $user) {

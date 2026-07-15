@@ -28,15 +28,16 @@ class Area extends Model
         return $this->hasMany(Branch::class);
     }
 
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
-
     public function getPayrollRateAttribute() {
 
         $rate = PayrollRate::where('slug', ($this->rate ? $this->rate : 'ncr'))->first()->rate;
 
         return $rate;
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class)
+            ->withTimestamps();
     }
 }

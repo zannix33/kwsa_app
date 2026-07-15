@@ -156,7 +156,7 @@
                         searchable:false
                     },
 
-                    {data:'name'},
+                    {data:'employee_no'},
 
                     {data:'fullname'},
 

@@ -47,15 +47,27 @@
 
                     <div class="form-group col-md-3">
                         <label>Employee No.</label>
-                        <input type="text"
-                               name="name"
-                               class="form-control"
-                               value="{{ old('name', optional($employee)->name) }}">
+                        <input
+                            type="text"
+                            name="employee_no"
+                            class="form-control"
+                            value="{{ old('employee_no',$employee->employee_no ?? '') }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input
+                            type="text"
+                            id="fullname"
+                            class="form-control"
+                            readonly
+                            value="{{ old('name',$employee->name ?? '') }}">
                     </div>
 
                     <div class="form-group col-md-3">
                         <label>First Name</label>
                         <input type="text"
+                               id="firstname"
                                name="firstname"
                                class="form-control"
                                value="{{ old('firstname', optional($employee)->firstname) }}">
@@ -72,6 +84,7 @@
                     <div class="form-group col-md-3">
                         <label>Last Name</label>
                         <input type="text"
+                               id="lastname"
                                name="lastname"
                                class="form-control"
                                value="{{ old('lastname', optional($employee)->lastname) }}">
@@ -239,32 +252,53 @@
                                value="{{ old('date_hired', optional(optional($employee)->date_hired)->format('Y-m-d')) }}">
                     </div>
 
-                    <div class="form-group col-md-4">
-                        <label>LESP Number</label>
-                        <input type="text"
-                               name="lesp_num"
-                               class="form-control"
-                               value="{{ old('lesp_num', optional($employee)->lesp_num) }}">
-                    </div>
-
                 </div>
 
                 <div class="form-row">
 
-                    <div class="form-group col-md-6">
-                        <label>LESP Issued</label>
+                    <div class="form-group col-md-3">
+                        <label>LESP Number</label>
                         <input type="text"
+                               name="lesp_num"
+                               class="form-control"
+                               value="{{ old('lesp_num', $employee->lesp_num ?? '') }}">
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>LESP Category</label>
+
+                        <select name="lesp_category" class="form-control">
+
+                            <option value="">Select Category</option>
+
+                            @foreach(['SO','SG','SM','BAG'] as $category)
+
+                                <option value="{{ $category }}"
+                                    {{ old('lesp_category', $employee->lesp_category ?? '') == $category ? 'selected' : '' }}>
+                                    {{ $category }}
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>LESP Issued</label>
+                        <input type="date"
                                name="lesp_issued"
                                class="form-control"
                                value="{{ old('lesp_issued', optional($employee)->lesp_issued) }}">
                     </div>
 
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-3">
                         <label>LESP Expiry</label>
+
                         <input type="date"
                                name="lesp_expiry"
                                class="form-control"
-                               value="{{ old('lesp_expiry', optional(optional($employee)->lesp_expiry)->format('Y-m-d')) }}">
+                               value="">
                     </div>
 
                 </div>
@@ -277,7 +311,7 @@
         <div class="card">
 
             <div class="card-header bg-secondary text-white">
-                Government IDs
+                Government IDs / Account Information
             </div>
 
             <div class="card-body">
@@ -289,7 +323,7 @@
                         <input type="text"
                                name="sss"
                                class="form-control"
-                               value="{{ old('sss', optional($employee)->sss) }}">
+                               value="{{ old('sss', $employee->sss ?? '') }}">
                     </div>
 
                     <div class="form-group col-md-3">
@@ -297,7 +331,7 @@
                         <input type="text"
                                name="tin"
                                class="form-control"
-                               value="{{ old('tin', optional($employee)->tin) }}">
+                               value="{{ old('tin', $employee->tin ?? '') }}">
                     </div>
 
                     <div class="form-group col-md-3">
@@ -305,7 +339,7 @@
                         <input type="text"
                                name="pagibig"
                                class="form-control"
-                               value="{{ old('pagibig', optional($employee)->pagibig) }}">
+                               value="{{ old('pagibig', $employee->pagibig ?? '') }}">
                     </div>
 
                     <div class="form-group col-md-3">
@@ -313,7 +347,20 @@
                         <input type="text"
                                name="philhealth"
                                class="form-control"
-                               value="{{ old('philhealth', optional($employee)->philhealth) }}">
+                               value="{{ old('philhealth', $employee->philhealth ?? '') }}">
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group col-md-6">
+                        <label>Micro Savings Account Number</label>
+
+                        <input type="text"
+                               name="micro_savings_account_no"
+                               class="form-control"
+                               value="{{ old('micro_savings_account_no', $employee->micro_savings_account_no ?? '') }}">
                     </div>
 
                 </div>
@@ -325,3 +372,26 @@
     </div>
 
 </div>
+
+@push('custom-scripts')
+    <script>
+
+        function updateName(){
+
+            let first = document.getElementById('firstname').value;
+
+            let last = document.getElementById('lastname').value;
+
+            document.getElementById('fullname').value =
+                (first + ' ' + last).trim();
+
+        }
+
+        document.getElementById('firstname').addEventListener('keyup',updateName);
+
+        document.getElementById('lastname').addEventListener('keyup',updateName);
+
+        updateName();
+
+    </script>
+@endpush

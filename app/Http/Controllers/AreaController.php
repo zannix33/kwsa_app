@@ -124,5 +124,39 @@ class AreaController extends Controller
         //
     }
 
+    public function assignGuard(Request $request)
+    {
+        $validated = $request->validate([
+            'area_id' => 'required|exists:areas,id',
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $area = Area::findOrFail($validated['area_id']);
+
+        $area->users()->syncWithoutDetaching([
+            $validated['user_id']
+        ]);
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
+
+    public function guards(Area $area)
+    {
+        return response()->json(
+            $area->users()
+                ->select(
+                    'users.id',
+                    'users.name',
+                    'users.employee_no',
+                    'users.position_id'
+                )
+                ->with('position')
+                ->orderBy('users.name')
+                ->get()
+        );
+    }
+
 
 }

@@ -133,35 +133,31 @@ class BranchController extends Controller
 
     public function guards(Branch $branch)
     {
+
         return response()->json(
             $branch->users()
-                ->select('users.id', 'users.firstname', 'users.lastname', 'users.email','users.phone' )
+                ->select('users.id', 'users.firstname', 'users.lastname', 'users.email','users.phone')
+                ->orderBy('users.name')
                 ->get()
         );
     }
 
     public function assignGuard(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
-            'user_id' => 'required|exists:users,id',
+            'user_id'   => 'required|exists:users,id',
         ]);
 
-        $user = User::findOrFail(
-            $request->user_id
-        );
+        $branch = Branch::findOrFail($validated['branch_id']);
 
-        $user->update([
-            'branch_id' => $request->branch_id
+        $branch->users()->syncWithoutDetaching([
+            $validated['user_id']
         ]);
-
-        //$branch->users()
-        //    ->syncWithoutDetaching([
-        //        $request->user_id
-        //    ]);
 
         return response()->json([
-            'success' => true
+            'success' => true,
+            'message' => 'Guard assigned successfully.'
         ]);
     }
 }
