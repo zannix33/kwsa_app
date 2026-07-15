@@ -43,8 +43,8 @@ class CreateUsersTable extends Migration
             $table->string('bloodtype')->nullable();
             $table->string('position')->nullable();
             $table->string('lesp_num')->nullable();
-            $table->string('lesp_issued')->nullable();
-            $table->string('lesp_expiry')->nullable();
+            $table->date('lesp_issued')->nullable();
+            $table->date('lesp_expiry')->nullable();
             $table->datetime('date_hired')->nullable();
             $table->datetime('dt_date')->nullable();
             $table->boolean('active')->default(1);
