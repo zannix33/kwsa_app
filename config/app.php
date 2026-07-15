@@ -168,7 +168,7 @@ return [
          * Package Service Providers...
          */
 
-        //Yajra\DataTables\DataTablesServiceProvider::class,
+        Yajra\Datatables\DataTablesServiceProvider::class,
 
         /*
          * Application Service Providers...
