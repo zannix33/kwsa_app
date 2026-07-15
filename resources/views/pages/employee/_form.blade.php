@@ -202,7 +202,7 @@
 
                 <div class="form-row">
 
-                    <div class="form-group">
+                    <div class="form-group col-md-4">
                         <label for="department_type">Department Type</label>
                         <select name="department_type" id="department_type" class="form-control @error('department_type') is-invalid @enderror">
                             <option value="">-- Select Department --</option>
@@ -221,7 +221,7 @@
                         @enderror
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group col-md-4">
                         <label>Position</label>
 
                         <select name="position_id"
