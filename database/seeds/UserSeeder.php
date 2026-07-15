@@ -22,9 +22,8 @@ class UserSeeder extends Seeder
                 'email' => 'testadmin@kwsa.com',
             ],
             [
-                'name' => 'Test Admin',
-                'firstname' => 'Test',
-                'lastname' => 'Admin',
+                'firstname' => 'Admin',
+                'lastname' => 'KSA',
                 'email' => 'admin@kwsa.com',
                 'password' => Hash::make('kwsa12345'),
                 'email_verified_at' => now(),
