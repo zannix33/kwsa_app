@@ -18,7 +18,7 @@
         "maatwebsite/excel": "^3.1",
         "nesbot/carbon": "^2.73",
         "spatie/laravel-permission": "^6.25",
-        "yajra/laravel-datatables-oracle": "^9.21"
+        "yajra/laravel-datatables-oracle": "^9.0"
     },
     "require-dev": {
         "filp/whoops": "~2.0",
