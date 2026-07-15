@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 //use Yajra\Datatables\Datatables;
 
 
