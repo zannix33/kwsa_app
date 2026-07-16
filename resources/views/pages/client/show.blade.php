@@ -118,10 +118,12 @@
 
                         <div>
 
-                            <button class="btn btn-success btn-sm"
-                                    id="btnAssignAreaGuard">
-                                Assign Guard
-                            </button>
+                            @if($company->name != 'KSA')
+                                <button class="btn btn-success btn-sm"
+                                        id="btnAssignAreaGuard">
+                                    Assign Guard
+                                </button>
+                            @endif
 
                             <button class="btn btn-primary btn-sm"
                                     data-toggle="modal"
@@ -179,7 +181,7 @@
 
                         <button class="btn btn-sm btn-primary"
                                 id="btnAssignGuard">
-                            Assign Guard
+                            Assign {{ $company->name == 'KSA' ? 'Staff' : 'Guard' }}
                         </button>
                     </div>
 
