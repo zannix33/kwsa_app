@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
 //use Yajra\Datatables\Datatables;
 
@@ -177,15 +178,35 @@ class EmployeeController extends Controller
 
             'bloodtype' => 'nullable|string|max:10',
 
-            'lesp_num' => 'nullable|string|max:255',
-            'lesp_issued' => 'nullable|string|max:255',
-            'lesp_expiry' => 'nullable|date',
+            'lesp_num' => [
+                Rule::requiredIf($request->department_type === 'Operations'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'lesp_category' => [
+                Rule::requiredIf($request->department_type === 'Operations'),
+                Rule::in(['SO', 'SG', 'SM', 'BAG']),
+                'nullable',
+            ],
+
+            'lesp_issued' => [
+                Rule::requiredIf($request->department_type === 'Operations'),
+                'nullable',
+                'date',
+            ],
+
+            'lesp_expiry' => [
+                Rule::requiredIf($request->department_type === 'Operations'),
+                'nullable',
+                'date',
+            ],
 
             'date_hired' => 'nullable|date',
             'dt_date' => 'nullable|date',
             'department_type' => 'required|in:Admin,Operations',
             'position_id'      => 'required|exists:positions,id',
-            'lesp_category' => 'nullable|in:SO,SG,SM,BAG',
             'micro_savings_account_no' => 'nullable|string|max:50',
         ]);
 

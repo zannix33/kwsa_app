@@ -254,7 +254,7 @@
 
                 </div>
 
-                <div class="form-row">
+                <div class="form-row" id="lesp-section">
 
                     <div class="form-group col-md-3">
                         <label>LESP Number</label>
@@ -392,6 +392,30 @@
         document.getElementById('lastname').addEventListener('keyup',updateName);
 
         updateName();
+
+
+        function toggleLesp() {
+
+            let type = document.getElementById('department_type').value;
+
+            let lesp = document.getElementById('lesp-section');
+
+            if (type === 'Admin') {
+
+            lesp.style.display = 'none';
+
+        } else {
+
+            lesp.style.display = '';
+
+        }
+        }
+
+            document.getElementById('department_type')
+            .addEventListener('change', toggleLesp);
+
+            toggleLesp();
+
 
     </script>
 @endpush
