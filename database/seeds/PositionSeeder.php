@@ -14,6 +14,10 @@ class PositionSeeder extends Seeder
             'Accounting',
             'Security Officer',
             'Security Guard',
+            'Head Operation',
+            'Officer',
+            'Admin Compliance',
+            'Inspector',
         ];
 
         foreach ($positions as $position) {
