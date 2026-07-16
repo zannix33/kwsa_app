@@ -44,7 +44,7 @@
 
                             <tr>
                                 <th width="45%">Employee No.</th>
-                                <td>{{ $employee->name }}</td>
+                                <td>{{ $employee->employee_no }}</td>
                             </tr>
                             <tr>
                                 <td>Department</td>
