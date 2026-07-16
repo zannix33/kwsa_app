@@ -298,7 +298,158 @@
                         <input type="date"
                                name="lesp_expiry"
                                class="form-control"
-                               value="">
+                               value="{{ old('lesp_expiry', optional($employee)->lesp_expiry) }}">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Family Information -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <strong>Family Information</strong>
+            </div>
+
+            <div class="card-body">
+
+                <div class="form-row">
+
+                    <div class="form-group col-md-6">
+                        <label>Spouse Name</label>
+                        <input
+                            type="text"
+                            name="spouse_name"
+                            class="form-control @error('spouse_name') is-invalid @enderror"
+                            value="{{ old('spouse_name', $employee->spouse_name ?? '') }}"
+                            placeholder="Enter spouse's full name">
+
+                        @error('spouse_name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label>Spouse Birthdate</label>
+                        <input
+                            type="date"
+                            name="spouse_birthdate"
+                            class="form-control @error('spouse_birthdate') is-invalid @enderror"
+                            value="{{ old('spouse_birthdate', optional($employee?->spouse_birthdate)->format('Y-m-d')) }}">
+
+                        @error('spouse_birthdate')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Beneficiary Information -->
+        <div class="card mb-3">
+
+            <div class="card-header bg-info text-white">
+
+                <strong>Beneficiary Information</strong>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="form-row">
+
+                    <!-- Beneficiary Name -->
+                    <div class="form-group col-md-4">
+
+                        <label>Beneficiary Name</label>
+
+                        <input
+                            type="text"
+                            name="beneficiary_name"
+                            class="form-control @error('beneficiary_name') is-invalid @enderror"
+                            value="{{ old('beneficiary_name',$employee?->beneficiary_name ?? '') }}">
+
+                        @error('beneficiary_name')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+
+                    </div>
+
+                    <!-- Relationship -->
+                    <div class="form-group col-md-4">
+
+                        <label>Relationship</label>
+
+                        <select
+                            name="beneficiary_relationship"
+                            class="form-control @error('beneficiary_relationship') is-invalid @enderror">
+
+                            <option value="">Select Relationship</option>
+
+                            @foreach([
+                                'Spouse',
+                                'Mother',
+                                'Father',
+                                'Son',
+                                'Daughter',
+                                'Brother',
+                                'Sister',
+                                'Grandparent',
+                                'Grandchild',
+                                'Uncle',
+                                'Aunt',
+                                'Nephew',
+                                'Niece',
+                                'Cousin',
+                                'Guardian',
+                                'Friend',
+                                'Other'
+                            ] as $relationship)
+
+                                <option
+                                    value="{{ $relationship }}"
+                                    {{ old('beneficiary_relationship',$employee->beneficiary_relationship ?? '') == $relationship ? 'selected' : '' }}>
+
+                                    {{ $relationship }}
+
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                        @error('beneficiary_relationship')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="form-group col-md-4">
+
+                        <label>Contact Number</label>
+
+                        <input
+                            type="text"
+                            name="beneficiary_contact"
+                            class="form-control @error('beneficiary_contact') is-invalid @enderror"
+                            value="{{ old('beneficiary_contact',$employee->beneficiary_contact ?? '') }}"
+                            placeholder="09XXXXXXXXX">
+
+                        @error('beneficiary_contact')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                        @enderror
+
                     </div>
 
                 </div>

@@ -30,6 +30,7 @@ class User extends Authenticatable
         'spouse_birthdate',
         'beneficiary_name',
         'beneficiary_contact',
+        'beneficiary_relationship',
         'password',
         'civil_status',
         'birthdate',
@@ -51,6 +52,7 @@ class User extends Authenticatable
         'employee_no',
         'lesp_category',
         'micro_savings_account_no',
+
     ];
 
     /**
@@ -74,7 +76,10 @@ class User extends Authenticatable
         'date_hired' => 'datetime:Y-m-d',
         'dt_date' => 'datetime:Y-m-d',
         'lesp_expiry' => 'datetime:Y-m-d',
+        'lesp_issued' => 'datetime:Y-m-d',
     ];
+
+
 
     protected static function booted()
     {

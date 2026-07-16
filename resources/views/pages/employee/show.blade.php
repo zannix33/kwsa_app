@@ -194,11 +194,61 @@
                 </div>
 
                 <!-- FAMILY -->
+
                 <div class="card shadow-sm mb-4">
 
-                    <div class="card-header bg-success text-white">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">
+                            <i class="fa fa-heart"></i>
+                            Spouse Information
+                        </h5>
+                    </div>
 
-                        <strong>Family Information</strong>
+                    <div class="card-body">
+
+                        @if($employee->spouse_name)
+
+                            <table class="table table-bordered table-striped">
+
+                                <tr>
+                                    <th width="30%">Spouse Name</th>
+                                    <td>{{ $employee->spouse_name }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Birthdate</th>
+                                    <td>
+                                        @if($employee->spouse_birthdate)
+                                            {{ $employee->spouse_birthdate->format('F d, Y') }}
+                                            <small class="text-muted">
+                                                ({{ $employee->spouse_birthdate->age }} years old)
+                                            </small>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        @else
+
+                            <div class="alert alert-secondary mb-0">
+                                <i class="fa fa-info-circle"></i>
+                                No spouse information available.
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+                <div class="card mb-3">
+
+                    <div class="card-header bg-info text-white">
+
+                        <strong>Beneficiary Information</strong>
 
                     </div>
 
@@ -207,23 +257,18 @@
                         <table class="table table-bordered">
 
                             <tr>
-                                <th width="25%">Spouse</th>
-                                <td>{{ $employee->spouse_name }}</td>
+                                <th width="30%">Beneficiary Name</th>
+                                <td>{{ $employee->beneficiary_name ?: '-' }}</td>
                             </tr>
 
                             <tr>
-                                <th>Spouse Birthdate</th>
-                                <td>{{ optional($employee->spouse_birthdate)->format('F d, Y') }}</td>
+                                <th>Relationship</th>
+                                <td>{{ $employee->beneficiary_relationship ?: '-' }}</td>
                             </tr>
 
                             <tr>
-                                <th>Beneficiary</th>
-                                <td>{{ $employee->beneficiary_name }}</td>
-                            </tr>
-
-                            <tr>
-                                <th>Beneficiary Contact</th>
-                                <td>{{ $employee->beneficiary_contact }}</td>
+                                <th>Contact Number</th>
+                                <td>{{ $employee->beneficiary_contact ?: '-' }}</td>
                             </tr>
 
                         </table>

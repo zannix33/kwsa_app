@@ -162,6 +162,7 @@ class EmployeeController extends Controller
 
             'beneficiary_name' => 'nullable|string|max:255',
             'beneficiary_contact' => 'nullable|numeric',
+            'beneficiary_relationship' => 'nullable|in:Spouse,Mother,Father,Son,Daughter,Brother,Sister,Grandparent,Grandchild,Uncle,Aunt,Nephew,Niece,Cousin,Guardian,Friend,Other',
 
             'password' => 'nullable|string|min:8',
 
@@ -208,6 +209,7 @@ class EmployeeController extends Controller
             'department_type' => 'required|in:Admin,Operations',
             'position_id'      => 'required|exists:positions,id',
             'micro_savings_account_no' => 'nullable|string|max:50',
+
         ]);
 
         if ($request->hasFile('photo')) {
@@ -295,6 +297,7 @@ class EmployeeController extends Controller
 
             'beneficiary_name' => 'nullable|string|max:255',
             'beneficiary_contact' => 'nullable',
+            'beneficiary_relationship' => 'nullable|in:Spouse,Mother,Father,Son,Daughter,Brother,Sister,Grandparent,Grandchild,Uncle,Aunt,Nephew,Niece,Cousin,Guardian,Friend,Other',
 
             'civil_status' => 'nullable|string|max:255',
             'birthdate' => 'nullable|date',
