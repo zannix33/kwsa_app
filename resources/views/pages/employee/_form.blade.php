@@ -2,6 +2,21 @@
     $employee = $employee ?? null;
 @endphp
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <h5>
+            <i class="fa fa-exclamation-triangle"></i>
+            Please correct the following errors:
+        </h5>
+
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="row">
 
     {{-- PHOTO --}}
