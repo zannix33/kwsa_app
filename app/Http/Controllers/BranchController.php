@@ -50,8 +50,8 @@ class BranchController extends Controller
             'address'         => 'nullable|string',
             'province'        => 'nullable|string|max:255',
             'baranggay'       => 'nullable|string|max:255',
-            'operation_start' => 'nullable|date',
-            'operation_end'   => 'nullable|date|after_or_equal:operation_start',
+            'operation_start' => 'nullable|date_format:H:i',
+            'operation_end'   => 'nullable|date_format:H:i',
         ]);
 
         $branch = Branch::create($validated);
@@ -100,6 +100,8 @@ class BranchController extends Controller
             'name' => 'required|string|max:255',
             'category' => 'required|in:company,property,individual',
             'active' => 'required|in:0,1',
+            'operation_start' => 'nullable|date_format:H:i',
+            'operation_end'   => 'nullable|date_format:H:i',
             'age_limit' => 'nullable|integer|min:0',
         ]);
 

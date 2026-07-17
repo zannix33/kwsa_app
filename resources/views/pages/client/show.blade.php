@@ -358,14 +358,24 @@
                             <input type="text" name="baranggay" class="form-control" maxlength="255">
                         </div>
 
-                        <div class="form-group">
-                            <label>Operation Start</label>
-                            <input type="date" name="operation_start" class="form-control">
-                        </div>
+                        <div class="form-row">
 
-                        <div class="form-group">
-                            <label>Operation End</label>
-                            <input type="date" name="operation_end" class="form-control">
+                            <div class="form-group col-md-6">
+                                <label>Operation Start</label>
+                                <input type="time"
+                                       name="operation_start"
+                                       class="form-control"
+                                       value="{{ old('operation_start', isset($branch) ? \Carbon\Carbon::parse($branch->operation_start)->format('H:i') : '') }}">
+                            </div>
+
+                            <div class="form-group col-md-6">
+                                <label>Operation End</label>
+                                <input type="time"
+                                       name="operation_end"
+                                       class="form-control"
+                                       value="{{ old('operation_end', isset($branch) ? \Carbon\Carbon::parse($branch->operation_end)->format('H:i') : '') }}">
+                            </div>
+
                         </div>
 
 
