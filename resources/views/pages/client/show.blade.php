@@ -177,7 +177,7 @@
 
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
-                        <span>Guards</span>
+                        <span>{{ $company->name == 'KSA' ? 'Staffs' : 'Guards' }}</span>
 
                         <button class="btn btn-sm btn-primary"
                                 id="btnAssignGuard">
@@ -187,7 +187,7 @@
 
                     <div class="card-body" id="guards-container">
                         <p class="text-muted">
-                            Select a branch to view guards
+                            Select a branch to view {{ $company->name == 'KSA' ? 'Staff' : 'Guard' }}
                         </p>
                     </div>
                 </div>
