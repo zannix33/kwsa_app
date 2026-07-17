@@ -643,7 +643,7 @@
 
                 if(response.length === 0)
                 {
-                    html = '<p class="text-muted">No guards assigned.</p>';
+                    html = '<p class="text-muted">No {{ $company->name == 'KSA' ? 'staff' : 'guards' }} assigned.</p>';
                 }
                 else
                 {
