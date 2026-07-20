@@ -218,8 +218,7 @@ class AreaController extends Controller
                 ->get([
                     'id',
                     'name',
-                    'description',
-                    'rate'
+                    'description'
                 ])
 
         );
