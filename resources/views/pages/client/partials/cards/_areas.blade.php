@@ -69,7 +69,7 @@
 
                         <td class="text-right">
 
-                            @if($area->rate)
+                            @if($area->payroll_rate)
 
                                 {{ number_format($area->payroll_rate,2) }}
 
