@@ -2,164 +2,199 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Models\Client;
-use App\Models\Area;
 use App\Models\Branch;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class BranchController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-
-        $companies = Client::latest()->paginate(10);
-
-        return view('pages.client.view', compact('companies'));
-
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        return view('pages.client.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * Store a newly created Branch.
      */
     public function store(Request $request)
     {
-
         $validated = $request->validate([
-            'area_id'         => 'nullable|exists:areas,id',
-            'name'            => 'nullable|string|max:255',
-            'address'         => 'nullable|string',
-            'province'        => 'nullable|string|max:255',
-            'baranggay'       => 'nullable|string|max:255',
+
+            'area_id' => 'required|exists:areas,id',
+
+            'name' => 'required|string|max:255',
+
+            'address' => 'nullable|string',
+
+            'province' => 'nullable|string|max:255',
+
+            'baranggay' => 'nullable|string|max:255',
+
             'operation_start' => 'nullable|date_format:H:i',
-            'operation_end'   => 'nullable|date_format:H:i',
+
+            'operation_end' => 'nullable|date_format:H:i|after:operation_start',
+
         ]);
 
         $branch = Branch::create($validated);
 
+        return response()->json([
 
-        return response()->json($branch);
+            'success' => true,
+
+            'id' => $branch->id,
+
+            'message' => 'Branch created successfully.'
+
+        ]);
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Update Branch.
      */
-    public function show($id)
-    {
-        $company = Client::findOrFail($id); //find($id)->get();
-
-        return view('pages.client.show', compact('company'));
-
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $company = Client::findOrFail($id);
-
-        return view('pages.client.edit', compact('company'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, Branch $branch)
     {
         $validated = $request->validate([
+
             'name' => 'required|string|max:255',
-            'category' => 'required|in:company,property,individual',
-            'active' => 'required|in:0,1',
+
+            'address' => 'nullable|string',
+
+            'province' => 'nullable|string|max:255',
+
+            'baranggay' => 'nullable|string|max:255',
+
             'operation_start' => 'nullable|date_format:H:i',
-            'operation_end'   => 'nullable|date_format:H:i',
-            'age_limit' => 'nullable|integer|min:0',
+
+            'operation_end' => 'nullable|date_format:H:i|after:operation_start',
+
         ]);
 
-        $client = Client::findOrFail($id);
+        $branch->update($validated);
 
-        $client->update($validated);
+        return response()->json([
 
-        return redirect()
-            ->route('clients.companies.index')
-            ->with('success', 'Company updated successfully.');
+            'success' => true,
 
+            'message' => 'Branch updated successfully.'
+
+        ]);
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Delete Branch.
      */
-    public function destroy($id)
+    public function destroy(Branch $branch)
     {
-        //
+        if ($branch->users()->count()) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Cannot delete a Branch with assigned guards.'
+
+            ], 422);
+
+        }
+
+        $branch->delete();
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Branch deleted successfully.'
+
+        ]);
     }
 
-    public function branches(Area $area)
-    {
-        return response()->json(
-            $area->branches()->get()
-        );
-    }
-
+    /**
+     * Load Guards assigned to Branch.
+     */
     public function guards(Branch $branch)
     {
-
         return response()->json(
+
             $branch->users()
-                ->select('users.id', 'users.firstname', 'users.lastname', 'users.email','users.phone')
-                ->orderBy('users.name')
+                ->with('position')
+                ->orderBy('name')
                 ->get()
+
         );
     }
 
+    /**
+     * Assign Guard to Branch.
+     */
     public function assignGuard(Request $request)
     {
         $validated = $request->validate([
+
             'branch_id' => 'required|exists:branches,id',
-            'user_id'   => 'required|exists:users,id',
+
+            'user_id' => 'required|exists:users,id',
+
         ]);
 
         $branch = Branch::findOrFail($validated['branch_id']);
 
         $branch->users()->syncWithoutDetaching([
+
             $validated['user_id']
+
         ]);
 
         return response()->json([
+
             'success' => true,
+
             'message' => 'Guard assigned successfully.'
+
         ]);
+    }
+
+    /**
+     * Remove Guard from Branch.
+     */
+    public function removeGuard(Request $request)
+    {
+        $validated = $request->validate([
+
+            'branch_id' => 'required|exists:branches,id',
+
+            'user_id' => 'required|exists:users,id',
+
+        ]);
+
+        $branch = Branch::findOrFail($validated['branch_id']);
+
+        $branch->users()->detach($validated['user_id']);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Guard removed successfully.'
+
+        ]);
+    }
+
+    /**
+     * Return guards not yet assigned to this Branch.
+     */
+    public function availableGuards(Branch $branch)
+    {
+        $assigned = $branch->users()->pluck('users.id');
+
+        return response()->json(
+
+            User::with('position')
+                ->whereNotIn('id', $assigned)
+                ->where('employee_type', 'Operations')
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'employee_no',
+                    'name',
+                    'position_id'
+                ])
+
+        );
     }
 }

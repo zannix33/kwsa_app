@@ -39,28 +39,60 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('companies', CompanyController::class);
     });
 
-    Route::post(
-        '/areas/assign-guard',
-        [\App\Http\Controllers\AreaController::class, 'assignGuard']
-    )->name('areas.assign.guard');
+    // Start of Areas //
+
+    Route::get(
+        '/companies/{company}/areas',
+        [\App\Http\Controllers\AreaController::class, 'indexByCompany']
+    )->name('companies.areas');
+
+    Route::post('/areas', [\App\Http\Controllers\AreaController::class, 'store'])
+        ->name('areas.store');
+
+    Route::put('/areas/{area}', [\App\Http\Controllers\AreaController::class, 'update'])
+        ->name('areas.update');
+
+    Route::delete('/areas/{area}', [\App\Http\Controllers\AreaController::class, 'destroy'])
+        ->name('areas.destroy');
 
     Route::get('/areas/{area}/branches', [\App\Http\Controllers\AreaController::class, 'branches']);
 
     Route::get('/areas/{area}/guards', [\App\Http\Controllers\AreaController::class, 'guards']);
 
-    Route::resource('areas', AreaController::class);
+    Route::get('/areas/{area}/available-guards', [\App\Http\Controllers\AreaController::class, 'availableGuards'])
+        ->name('areas.available.guards');
 
+    Route::post('/areas/assign-guard', [\App\Http\Controllers\AreaController::class, 'assignGuard'])
+        ->name('areas.assign.guard');
 
-    Route::resource('branches', BranchController::class);
-    Route::get(
-        '/branches/{branch}/guards',
-        [\App\Http\Controllers\BranchController::class, 'guards']
-    );
+    Route::post('/areas/remove-guard', [\App\Http\Controllers\AreaController::class, 'removeGuard'])
+        ->name('areas.remove.guard');
 
-    Route::post(
-        '/branches/assign-guard',
-        [\App\Http\Controllers\BranchController::class, 'assignGuard']
-    );
+    // End of Areas //
+
+    // Start of Branches //
+
+    Route::post('/branches', [\App\Http\Controllers\BranchController::class, 'store'])
+        ->name('branches.store');
+
+    Route::put('/branches/{branch}', [\App\Http\Controllers\BranchController::class, 'update'])
+        ->name('branches.update');
+
+    Route::delete('/branches/{branch}', [\App\Http\Controllers\BranchController::class, 'destroy'])
+        ->name('branches.destroy');
+
+    Route::get('/branches/{branch}/guards', [\App\Http\Controllers\BranchController::class, 'guards']);
+
+    Route::get('/branches/{branch}/available-guards', [\App\Http\Controllers\BranchController::class, 'availableGuards'])
+        ->name('branches.available.guards');
+
+    Route::post('/branches/assign-guard', [\App\Http\Controllers\BranchController::class, 'assignGuard'])
+        ->name('branches.assign.guard');
+
+    Route::post('/branches/remove-guard', [\App\Http\Controllers\BranchController::class, 'removeGuard'])
+        ->name('branches.remove.guard');
+
+    //End of branches //
 
     //DTR
 

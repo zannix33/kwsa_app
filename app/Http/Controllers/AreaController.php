@@ -2,161 +2,226 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Models\Client;
 use App\Models\Area;
+use App\Models\Client;
+use App\Models\Company;
+use Illuminate\Http\Request;
 
 class AreaController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-
-        $companies = Client::latest()->paginate(10);
-
-        return view('pages.client.view', compact('companies'));
-
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        return view('pages.client.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * Store a newly created Area.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'name' => 'required',
-            'description' => 'nullable',
-            'rate' => 'required|in:ncr,provincial',
+        $validated = $request->validate([
+
+            'company_id' => 'required|exists:companies,id',
+
+            'name' => 'required|string|max:255',
+
+            'description' => 'nullable|string',
+
+            'rate' => 'nullable|numeric|min:0',
+
         ]);
 
-        $area = Area::create($request->all());
+        $area = Area::create($validated);
 
-        return response()->json($area);
+        return response()->json([
+
+            'success' => true,
+
+            'id' => $area->id,
+
+            'message' => 'Area created successfully.'
+
+        ]);
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Update Area.
      */
-    public function show($id)
-    {
-        $company = Client::findOrFail($id); //find($id)->get();
-
-        return view('pages.client.show', compact('company'));
-
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $company = Client::findOrFail($id);
-
-        return view('pages.client.edit', compact('company'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, Area $area)
     {
         $validated = $request->validate([
+
             'name' => 'required|string|max:255',
-            'category' => 'required|in:company,property,individual',
-            'active' => 'required|in:0,1',
-            'age_limit' => 'nullable|integer|min:0',
+
+            'description' => 'nullable|string',
+
+            'rate' => 'nullable|numeric|min:0',
+
         ]);
 
-        $client = Client::findOrFail($id);
+        $area->update($validated);
 
-        $client->update($validated);
+        return response()->json([
 
-        return redirect()
-            ->route('clients.companies.index')
-            ->with('success', 'Company updated successfully.');
+            'success' => true,
 
+            'message' => 'Area updated successfully.'
+
+        ]);
     }
 
+    /**
+     * Delete Area.
+     */
+    public function destroy(Area $area)
+    {
+        if ($area->branches()->count()) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Cannot delete Area with existing Branches.'
+
+            ], 422);
+
+        }
+
+        $area->delete();
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Area deleted successfully.'
+
+        ]);
+    }
+
+    /**
+     * Load Branches for Area.
+     */
     public function branches(Area $area)
     {
         return response()->json(
-            $area->branches()->get()
+
+            $area->branches()
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'address',
+                    'province',
+                    'baranggay',
+                    'operation_start',
+                    'operation_end'
+                ])
+
         );
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Load Guards assigned to Area.
      */
-    public function destroy($id)
+    public function guards(Area $area)
     {
-        //
+        return response()->json(
+
+            $area->users()
+                ->with('position')
+                ->orderBy('name')
+                ->get()
+
+        );
     }
 
+    /**
+     * Assign Guard to Area.
+     */
     public function assignGuard(Request $request)
     {
         $validated = $request->validate([
+
             'area_id' => 'required|exists:areas,id',
+
             'user_id' => 'required|exists:users,id',
+
         ]);
 
         $area = Area::findOrFail($validated['area_id']);
 
         $area->users()->syncWithoutDetaching([
+
             $validated['user_id']
+
         ]);
 
         return response()->json([
-            'success' => true
+
+            'success' => true,
+
+            'message' => 'Guard assigned successfully.'
+
         ]);
     }
 
-    public function guards(Area $area)
+    /**
+     * Remove Guard from Area.
+     */
+    public function removeGuard(Request $request)
     {
+        $validated = $request->validate([
+
+            'area_id' => 'required|exists:areas,id',
+
+            'user_id' => 'required|exists:users,id',
+
+        ]);
+
+        $area = Area::findOrFail($validated['area_id']);
+
+        $area->users()->detach($validated['user_id']);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Guard removed successfully.'
+
+        ]);
+    }
+
+    /**
+     * Return guards not yet assigned to this Area.
+     */
+    public function availableGuards(Area $area)
+    {
+        $assigned = $area->users()->pluck('users.id');
+
         return response()->json(
-            $area->users()
-                ->select(
-                    'users.id',
-                    'users.name',
-                    'users.employee_no',
-                    'users.position_id'
-                )
-                ->with('position')
-                ->orderBy('users.name')
-                ->get()
+
+            \App\Models\User::with('position')
+                ->whereNotIn('id', $assigned)
+                ->where('employee_type', 'Operations')
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'employee_no',
+                    'name',
+                    'position_id'
+                ])
+
         );
     }
 
+    public function indexByCompany(Client $company)
+    {
+        return response()->json(
 
+            $company->areas()
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'description',
+                    'rate'
+                ])
+
+        );
+    }
 }
