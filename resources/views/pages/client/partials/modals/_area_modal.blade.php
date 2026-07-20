@@ -7,7 +7,7 @@
             @csrf
 
             <input type="hidden"
-                   name="company_id"
+                   name="client_id"
                    value="{{ $company->id }}">
 
             <div class="modal-content">

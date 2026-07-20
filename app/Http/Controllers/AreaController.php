@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use App\Models\Client;
-use App\Models\Company;
+//use App\Models\Company;
 use Illuminate\Http\Request;
 
 class AreaController extends Controller
@@ -16,7 +16,7 @@ class AreaController extends Controller
     {
         $validated = $request->validate([
 
-            'company_id' => 'required|exists:companies,id',
+            'client_id' => 'required|exists:clients,id',
 
             'name' => 'required|string|max:255',
 
