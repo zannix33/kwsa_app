@@ -55,7 +55,6 @@
                         style="cursor:pointer;">
 
                         <td>
-
                             <strong>{{ $area->name }}</strong>
 
                             @if($area->description)
@@ -68,6 +67,7 @@
                         </td>
 
                         <td class="text-right">
+
 
                             @if($area->payroll_rate)
 

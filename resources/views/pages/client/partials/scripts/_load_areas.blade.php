@@ -76,8 +76,8 @@
 
                 <td class="text-right">
 
-                    ${area.rate
-                        ? Number(area.rate).toFixed(2)
+                    ${area.payroll_rate
+                        ? Number(area.payroll_rate).toFixed(2)
                         : '-'}
 
                 </td>

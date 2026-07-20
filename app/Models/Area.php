@@ -18,6 +18,10 @@ class Area extends Model
         'rate',
     ];
 
+    protected $appends = [
+        'payroll_rate',
+    ];
+
     public function client()
     {
         return $this->belongsTo(Client::class);
@@ -32,13 +36,7 @@ class Area extends Model
 
         $rate = PayrollRate::where('slug', ($this->rate ? $this->rate : 'ncr'))->first()?->rate;
 
-
-
-        if($rate != null) {
-            return $rate;
-        }
-
-        return 0;
+        return $rate;
     }
 
     public function users()
