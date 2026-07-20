@@ -22,7 +22,7 @@ class AreaController extends Controller
 
             'description' => 'nullable|string',
 
-            'rate' => 'nullable|numeric|min:0',
+            'rate' => 'nullable|string',
 
         ]);
 
