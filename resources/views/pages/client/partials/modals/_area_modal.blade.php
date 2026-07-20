@@ -62,11 +62,11 @@
 
                         <label>Rate</label>
 
-                        <input type="number"
-                               name="rate"
-                               class="form-control"
-                               step="0.01"
-                               min="0">
+                        <select name="rate"
+                               class="form-control">
+                            <option value="ncr">NCR Rate</option>
+                            <option value="provincial">Provincial Rate</option>
+                        </select>
 
                     </div>
 

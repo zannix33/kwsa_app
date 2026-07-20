@@ -71,7 +71,7 @@
 
                             @if($area->rate)
 
-                                {{ number_format($area?->payroll_rate,2) }}
+                                {{ number_format($area->payroll_rate,2) }}
 
                             @else
 
