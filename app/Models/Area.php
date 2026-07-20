@@ -32,7 +32,7 @@ class Area extends Model
 
         $rate = PayrollRate::where('slug', ($this->rate ? $this->rate : 'ncr'))->first()->rate;
 
-        if($rate) {
+        if($rate != null) {
             return $rate;
         }
 
