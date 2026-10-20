@@ -332,79 +332,114 @@ class PayrollGenerationService
             |--------------------------------------------------------------------------
             */
 
+            // Keep the existing SSS calculation unchanged.
             $sss = SSSService::compute(
                 $result['earnings']['overall_pay']
             );
 
-            $pagibigRate = PayrollRate::where('slug', 'pagibig')->first()->rate;
-            $philhealthRate = PayrollRate::where('slug', 'philhealth')->first()->rate;
+            $pagibigRate = PayrollRate::where('slug', 'pagibig')
+                ->firstOrFail()
+                ->rate;
 
+            $philhealthRate = PayrollRate::where('slug', 'philhealth')
+                ->firstOrFail()
+                ->rate;
+
+            // SSS remains deducted in both payroll periods.
             PayrollItemService::deduction(
                 $payroll,
                 'SSS',
                 'SSS Contribution',
                 $sss
-            );
-
-            PayrollItemService::deduction(
-                $payroll,
-                'PHIC',
-                'PhilHealth Contribution',
-                $philhealthRate
-            );
-
-            PayrollItemService::deduction(
-                $payroll,
-                'PAGIBIG',
-                'PagIBIG Contribution',
-                $pagibigRate
             );
 
             /*
-            $philhealth =
-                PhilHealthService::compute(
-                    $monthlySalary
-                );
+            |--------------------------------------------------------------------------
+            | PhilHealth and Pag-IBIG: 7-Day First-Half Rule
+            |--------------------------------------------------------------------------
+            */
 
-            $pagibig =
-                PagibigService::compute(
-                    $monthlySalary
-                );
+            $periodStart = \Carbon\Carbon::parse($period->date_from);
+            $periodEnd = \Carbon\Carbon::parse($period->date_to);
 
-            $tax = TaxService::compute(
-                $monthlySalary
-            );
+            $year = $periodStart->year;
+            $month = $periodStart->month;
 
+            // Determine whether this is the first or second half.
+            $isFirstHalf = $periodStart->day <= 15
+                && $periodEnd->day <= 15;
 
-            PayrollItemService::deduction(
-                $payroll,
-                'SSS',
-                'SSS Contribution',
-                $sss
-            );
+            $isSecondHalf = $periodStart->day >= 16;
 
-            PayrollItemService::deduction(
-                $payroll,
-                'PHIC',
-                'PhilHealth Contribution',
-                $philhealth
-            );
+            // Count distinct DTR work dates from the 1st through the 15th.
+            // Include DTRs already assigned to a payroll.
+            $firstHalfDaysWorked = DailyTimeRecord::where(
+                'user_id',
+                $user->id
+            )
+                ->whereYear('work_date', $year)
+                ->whereMonth('work_date', $month)
+                ->whereDay('work_date', '<=', 15)
+                ->distinct()
+                ->count('work_date');
 
-            PayrollItemService::deduction(
-                $payroll,
-                'PAGIBIG',
-                'PagIBIG Contribution',
-                $pagibig
-            );
+            // First half: deduct only if at least 7 days were worked.
+            // Second half: deduct if it has not already been deducted.
+            $shouldDeductMonthlyContributions = false;
 
-            PayrollItemService::deduction(
-                $payroll,
-                'TAX',
-                'Withholding Tax',
-                $tax
-            );
+            if ($isFirstHalf && $firstHalfDaysWorked >= 7) {
+                $shouldDeductMonthlyContributions = true;
+            }
 
-             */
+            if ($isSecondHalf) {
+                $shouldDeductMonthlyContributions = true;
+            }
+
+            if ($shouldDeductMonthlyContributions) {
+
+                foreach ([
+                             'PHIC' => [
+                                 'description' => 'PhilHealth Contribution',
+                                 'amount' => $philhealthRate,
+                             ],
+                             'PAGIBIG' => [
+                                 'description' => 'PagIBIG Contribution',
+                                 'amount' => $pagibigRate,
+                             ],
+                         ] as $code => $contribution) {
+
+                    // Check whether this contribution already exists
+                    // in any payroll for this employee in the same month.
+                    $alreadyDeducted = DB::table('payroll_items')
+                        ->join(
+                            'payrolls',
+                            'payroll_items.payroll_id',
+                            '=',
+                            'payrolls.id'
+                        )
+                        ->join(
+                            'payroll_periods',
+                            'payrolls.payroll_period_id',
+                            '=',
+                            'payroll_periods.id'
+                        )
+                        ->where('payrolls.user_id', $user->id)
+                        ->where('payroll_items.code', $code)
+                        ->whereYear('payroll_periods.date_from', $year)
+                        ->whereMonth('payroll_periods.date_from', $month)
+                        ->exists();
+
+                    if (!$alreadyDeducted) {
+                        PayrollItemService::deduction(
+                            $payroll,
+                            $code,
+                            $contribution['description'],
+                            $contribution['amount']
+                        );
+                    }
+                }
+            }
+
 
             /*
             |--------------------------------------------------------------------------
