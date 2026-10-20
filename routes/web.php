@@ -68,6 +68,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/areas/remove-guard', [\App\Http\Controllers\AreaController::class, 'removeGuard'])
         ->name('areas.remove.guard');
 
+    Route::get('/regions-list', [\App\Http\Controllers\AreaController::class, 'regions'])
+        ->name('areas.regions');
+
     // End of Areas //
 
     // Start of Branches //
@@ -113,7 +116,14 @@ Route::group(['middleware' => ['auth']], function () {
             [\App\Http\Controllers\DailyTimeRecordController::class,'bulkStore']
         )->name('dtr.bulk.store');
 
+        Route::get(
+            '/employees/{employee}/assignments',
+            [DailyTimeRecordController::class, 'assignments']
+        )->name('employees.assignments');
+
     });
+
+    // end of dtr
 
     //Route::resource('dtr', DailyTimeRecordController::class);
 
@@ -443,10 +453,18 @@ Route::group(['middleware' => ['auth']], function () {
 
         });
 
+    Route::resource('loans', LoanController::class);
+
     // Arms
     //Route::resource('arms', ArmController::class);
     //Route::get('arms/datatable',[ArmController::class,'datatable'])
     //    ->name('arms.datatable');
+    Route::get('/pay-rates', [\App\Http\Controllers\PayRateController::class, 'index'])
+        ->name('pay-rates.index');
+
+    Route::post('/pay-rates', [\App\Http\Controllers\PayRateController::class, 'store'])
+        ->name('pay-rates.store');
+
 
 
     Route::group(['prefix' => 'basic-ui'], function(){

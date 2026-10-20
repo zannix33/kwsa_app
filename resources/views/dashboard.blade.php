@@ -5,6 +5,7 @@
 @endpush
 
 @section('content')
+    <!--
 <div class="row">
   <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 grid-margin stretch-card">
       <div class="card">
@@ -100,7 +101,7 @@
 
 
 
-
+-->
 @endsection
 
 @push('plugin-scripts')

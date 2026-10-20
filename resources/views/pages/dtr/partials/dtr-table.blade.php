@@ -28,7 +28,13 @@
 
         </div>
 
+        <input
+            type="hidden"
+            id="employee_id"
+            value="{{ $user->id }}">
+
         <div class="table-responsive">
+
 
 
             <table
@@ -43,6 +49,10 @@
                     <th>Date</th>
                     <th>Day</th>
 
+                    <th width="220">Area</th>
+
+                    <th width="220">Branch</th>
+
                     <th>Operation Start</th>
                     <th>Operation End</th>
 
@@ -55,6 +65,7 @@
 
                     <th>Regular</th>
                     <th>OT</th>
+                    <th>EH</th>
                     <th>ND</th>
                     <th>Late</th>
                     <th>UT</th>
@@ -87,6 +98,42 @@
                         </td>
 
                         <td>{{ $date->format('l') }}</td>
+
+                        <td style="min-width: 150px;">
+
+                            <select
+                                name="records[{{ $loop->index }}][area_id]"
+                                class="form-control area-select">
+
+                                <option value="">Select Area</option>
+
+                                @foreach($areas as $area)
+
+                                    <option value="{{ $area->id }}">
+
+                                        {{ $area->name }}
+
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+
+                        </td>
+
+                        <td style="min-width: 150px;">
+
+                            <select
+                                name="records[{{ $loop->index }}][branch_id]"
+                                class="form-control branch-select">
+
+                                <option value="">No Branch</option>
+
+                            </select>
+
+                        </td>
+
+
 
                         <td>
                             <input type="time"
@@ -147,6 +194,17 @@
                             <input type="hidden"
                                    class="overtime_hours_hidden"
                                    name="records[{{ $loop->index }}][overtime_hours]">
+                        </td>
+
+                        <td>
+                            <input type="text"
+                                   readonly
+                                   class="form-control extended_hours">
+
+                            <input type="hidden"
+                                   class="extended_hours_hidden"
+                                   name="records[{{ $loop->index }}][extended_hours]">
+
                         </td>
 
                         <td>
@@ -233,3 +291,5 @@
     </div>
 
 </div>
+
+

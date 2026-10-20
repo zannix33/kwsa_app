@@ -21,6 +21,7 @@
 
     <script>
 
+
         document.addEventListener('change', function(e){
 
             if(e.target.classList.contains('holiday'))
@@ -153,6 +154,21 @@
                 ) / 60;
 
             /*
+            |-------------------------------------------------------------------------
+            | Extended Hours
+            |-------------------------------------------------------------------------
+             */
+            let extendedHours = 0;
+
+            if (actualOut > schedEnd) {
+
+                extendedHours =
+                    (actualOut - schedEnd) /
+                    3600000;
+
+            }
+
+            /*
             |--------------------------------------------------------------------------
             | Worked Hours
             |--------------------------------------------------------------------------
@@ -247,6 +263,10 @@
                     0
                 );
 
+            if ( extendedHours != 0 ) {
+                overtimeHours = overtimeHours - extendedHours;
+            }
+
             /*
             |--------------------------------------------------------------------------
             | ND
@@ -283,6 +303,9 @@
             row.querySelector('.undertime_hours').value =
                 undertimeHours.toFixed(2);
 
+            row.querySelector('.extended_hours').value =
+                extendedHours.toFixed(2);
+
             /*
             |--------------------------------------------------------------------------
             | Hidden Inputs
@@ -307,6 +330,9 @@
             row.querySelector('.undertime_hours_hidden').value =
                 undertimeHours.toFixed(2);
 
+            row.querySelector('.extended_hours_hidden').value =
+                extendedHours.toFixed(2);;
+
             calculateTotals();
         }
 
@@ -315,6 +341,7 @@
             let scheduled = 0;
             let regular = 0;
             let ot = 0;
+            let eh = 0;
             let nd = 0;
             let late = 0;
             let ut = 0;
@@ -337,6 +364,10 @@
 
                     nd += parseFloat(
                         row.querySelector('.nd_hours_hidden')?.value || 0
+                    );
+
+                    eh += parseFloat(
+                        row.querySelector('.extended_hours_hidden')?.value || 0
                     );
 
                     late += parseFloat(
@@ -365,6 +396,64 @@
 
             document.getElementById('totalUT').innerHTML =
                 ut.toFixed(2);
+        }
+
+        function calculateExtendedHours(row)
+        {
+            let branchId = row.find('.branch-select').val();
+
+            let timeOut = row.find('.time-out').val();
+
+            if (!branchId || !timeOut) {
+
+                row.find('.extended-hours').val("0.00");
+
+                return;
+
+            }
+
+            let operationEnd = null;
+
+            employeeAreas.forEach(function(area){
+
+                area.branches.forEach(function(branch){
+
+                    if(branch.id == branchId){
+
+                        operationEnd = branch.operation_end;
+
+                    }
+
+                });
+
+            });
+
+            if(!operationEnd){
+
+                row.find('.extended-hours').val("0.00");
+
+                return;
+
+            }
+
+            let endMinutes = convertToMinutes(operationEnd);
+
+            let outMinutes = convertToMinutes(timeOut);
+
+            if(outMinutes <= endMinutes){
+
+                row.find('.extended-hours').val("0.00");
+
+                return;
+
+            }
+
+            let hours = (outMinutes - endMinutes) / 60;
+
+            row.find('.extended-hours').val(
+                hours.toFixed(2)
+            );
+
         }
 
         /*

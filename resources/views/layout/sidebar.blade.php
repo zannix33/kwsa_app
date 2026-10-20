@@ -147,6 +147,13 @@
           </div>
       </li>
 
+      <li class="nav-item {{ active_class(['/']) }}">
+          <a class="nav-link" href="{{ url('/loans') }}">
+              <i class="menu-icon mdi mdi-television"></i>
+              <span class="menu-title">Loans</span>
+          </a>
+      </li>
+
 
       {{--
     <li class="nav-item {{ active_class(['basic-ui/*']) }}">

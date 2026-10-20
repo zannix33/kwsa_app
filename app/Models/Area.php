@@ -16,6 +16,7 @@ class Area extends Model
         'name',
         'description',
         'rate',
+        'region_id',
     ];
 
     protected $appends = [
@@ -43,5 +44,15 @@ class Area extends Model
     {
         return $this->belongsToMany(User::class)
             ->withTimestamps();
+    }
+
+    public function dtrs()
+    {
+        return $this->hasMany(DailyTimeRecord::class);
+    }
+
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
     }
 }

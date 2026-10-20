@@ -15,27 +15,21 @@ class AreaController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-
             'client_id' => 'required|exists:clients,id',
-
             'name' => 'required|string|max:255',
-
             'description' => 'nullable|string',
+            'region_id' => 'nullable|exists:regions,id',
 
-            'rate' => 'nullable|string',
-
+            // Temporary compatibility with the existing column.
+            'rate' => 'nullable|string|max:255',
         ]);
 
         $area = Area::create($validated);
 
         return response()->json([
-
             'success' => true,
-
             'id' => $area->id,
-
-            'message' => 'Area created successfully.'
-
+            'message' => 'Area created successfully.',
         ]);
     }
 
@@ -45,23 +39,19 @@ class AreaController extends Controller
     public function update(Request $request, Area $area)
     {
         $validated = $request->validate([
-
             'name' => 'required|string|max:255',
-
             'description' => 'nullable|string',
+            'region_id' => 'nullable|exists:regions,id',
 
-            'rate' => 'nullable|numeric|min:0',
-
+            // Temporary compatibility with the existing column.
+            'rate' => 'nullable|string|max:255',
         ]);
 
         $area->update($validated);
 
         return response()->json([
-
             'success' => true,
-
-            'message' => 'Area updated successfully.'
-
+            'message' => 'Area updated successfully.',
         ]);
     }
 
@@ -212,15 +202,29 @@ class AreaController extends Controller
     public function indexByCompany(Client $company)
     {
         return response()->json(
-
             $company->areas()
+                ->with('region:id,code,name')
                 ->orderBy('name')
-                ->get([
-                    'id',
-                    'name',
-                    'description'
-                ])
+                ->get()
+                ->map(function ($area) {
+                    return [
+                        'id' => $area->id,
+                        'name' => $area->name,
+                        'description' => $area->description,
+                        'region_id' => $area->region_id,
+                        'region_code' => optional($area->region)->code,
+                        'region_name' => optional($area->region)->name,
+                    ];
+                })
+        );
+    }
 
+    public function regions()
+    {
+        return response()->json(
+            \App\Models\Region::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'code', 'name'])
         );
     }
 }

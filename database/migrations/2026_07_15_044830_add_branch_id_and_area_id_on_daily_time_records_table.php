@@ -14,16 +14,16 @@ class AddBranchIdAndAreaIdOnDailyTimeRecordsTable extends Migration
     public function up()
     {
         Schema::table('daily_time_records', function (Blueprint $table) {
-            $table->foreignId('branch_id')
-                ->after('user_id')
-                ->constrained()
-                ->nullable()
-                ->cascadeOnDelete();
+            //$table->foreignId('branch_id')
+            //    ->after('user_id')
+            //    ->constrained()
+            //    ->nullable()
+            //    ->cascadeOnDelete();
 
-            $table->foreignId('area_id')
-                ->after('branch_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            //$table->foreignId('area_id')
+            //    ->after('branch_id')
+            //    ->constrained()
+            //    ->cascadeOnDelete();
         });
     }
 

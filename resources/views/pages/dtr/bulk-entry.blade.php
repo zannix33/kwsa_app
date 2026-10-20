@@ -62,3 +62,5 @@
 @endsection
 
 @include('pages.dtr.partials.scripts')
+@include('pages.dtr.partials.script._assignments')
+

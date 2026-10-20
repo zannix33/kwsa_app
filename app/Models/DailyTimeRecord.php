@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DailyTimeRecord extends Model
 {
@@ -13,6 +15,8 @@ class DailyTimeRecord extends Model
 
         'user_id',
         'work_date',
+        'branch_id',
+        'area_id',
 
         'operation_start',
         'operation_end',
@@ -26,6 +30,7 @@ class DailyTimeRecord extends Model
 
         'regular_hours',
         'overtime_hours',
+        'extended_hours',
         'night_differential_hours',
 
         'late_hours',
@@ -69,4 +74,14 @@ class DailyTimeRecord extends Model
             : '';
     }
     */
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
+    }
 }

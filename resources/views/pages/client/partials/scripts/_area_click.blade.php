@@ -66,4 +66,58 @@
 
     });
 
+
+$(document).ready(function () {
+
+    $('#areaModal').on('show.bs.modal', function () {
+        loadAreaRegions();
+    });
+
+    function loadAreaRegions(selectedRegionId = '') {
+        var $region = $('#areaRegion');
+
+        $region.html(
+            '<option value="">Loading regions...</option>'
+        );
+
+        $.ajax({
+            url: "{{ route('areas.regions') }}",
+            type: 'GET',
+            dataType: 'json',
+
+            success: function (regions) {
+                $region.empty();
+
+                $region.append(
+                    $('<option>', {
+                        value: '',
+                        text: 'Select Region (Optional)'
+                    })
+                );
+
+                $.each(regions, function (index, region) {
+                    $region.append(
+                        $('<option>', {
+                            value: region.id,
+                            text: region.code + ' - ' + region.name
+                        })
+                    );
+                });
+
+                $region.val(selectedRegionId);
+            },
+
+            error: function () {
+                $region.html(
+                    '<option value="">Unable to load regions</option>'
+                );
+            }
+        });
+    }
+
+});
+
+
+
+
 </script>

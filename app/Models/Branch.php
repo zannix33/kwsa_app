@@ -29,20 +29,14 @@ class Branch extends Model
         return $this->belongsTo(Area::class);
     }
 
-    /*
-    public function users()
-    {
-        return $this->belongsToMany(
-            User::class,
-            'branch_user'
-        )->withTimestamps();
-    }
-    */
-
     public function users()
     {
         return $this->belongsToMany(User::class)
             ->withTimestamps();
     }
 
+    public function dtrs()
+    {
+        return $this->hasMany(DailyTimeRecord::class);
+    }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyTimeRecord;
+use App\Models\PayrollPeriod;
 use App\Models\User;
+use App\Models\Area;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -13,9 +15,14 @@ class DailyTimeRecordController extends Controller
 {
     public function createBulk()
     {
-        $users = User::orderBy('lastname')
-            ->whereNotNull('branch_id')
-            ->orWhereNotNull('area_id')
+        //$users = User::orderBy('name')
+        //    ->get();
+
+        $users = User::where(function ($query) {
+            $query->whereHas('areas')
+                ->orWhereHas('branches');
+        })
+            ->orderBy('lastname')
             ->orderBy('firstname')
             ->get();
 
@@ -33,22 +40,68 @@ class DailyTimeRecordController extends Controller
             'to_date'     => 'required|date|after_or_equal:from_date',
         ]);
 
-        $user = User::findOrFail(
-            $request->user_id
-        );
+        //$user = User::findOrFail(
+        //    $request->user_id
+        //);
+
+        //$user = User::with([
+        //    'areas.branches'
+        //])->findOrFail($request->user_id);
 
         $period = CarbonPeriod::create(
             $request->from_date,
             $request->to_date
         );
 
+        $user = User::with([
+            'areas.branches'
+        ])->findOrFail($request->user_id);
+
+        $areas = Area::with([
+                'branches'
+            ])->get();
+
+        //$payrollPeriod = PayrollPeriod::findOrFail(
+        //    $period->id
+        //);
+
+        $dates = [];
+
+        $current = Carbon::parse(
+            $request->from_date,
+        );
+
+        $end = Carbon::parse(
+            $request->to_date
+        );
+
+        while($current->lte($end)){
+            $dates[] = $current->copy();
+            $current->addDay();
+        }
+
         return view(
             'pages.dtr.bulk-entry',
-            compact(
-                'user',
-                'period'
-            )
+            [
+
+                'user'=>$user,
+
+                'areas'=>$areas, //$user->areas,
+
+                'dates'=>$dates,
+
+                'period'=>$period
+
+            ]
         );
+
+        //return view(
+        //    'pages.dtr.bulk-entry',
+        //    compact(
+        //        'user',
+        //        'period'
+        //    )
+        //);
     }
 
     public function bulkStore(Request $request)
@@ -76,6 +129,8 @@ class DailyTimeRecordController extends Controller
                     [
                         'user_id' => $request->user_id,
                         'work_date'   => $record['work_date'],
+                        'area_id'=>$record['area_id'],
+                        'branch_id'=>$record['branch_id'],
                     ],
                     [
                         'operation_start' =>
@@ -101,6 +156,9 @@ class DailyTimeRecordController extends Controller
 
                         'overtime_hours' =>
                             $calculated['overtime_hours'],
+
+                        'extended_hours' =>
+                            $calculated['extended_hours'],
 
                         'night_differential_hours' =>
                             $calculated['night_differential_hours'],
@@ -275,6 +333,24 @@ class DailyTimeRecordController extends Controller
         );
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Extended Hours
+        |--------------------------------------------------------------------------
+        |
+        | Hours worked after operation_end.
+        |
+        */
+
+        $extendedHours = 0;
+
+        if ($operationEnd && $timeOut->greaterThan($operationEnd)) {
+
+            $extendedHours = round(
+                $operationEnd->diffInMinutes($timeOut) / 60,
+                2
+            );
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -286,6 +362,10 @@ class DailyTimeRecordController extends Controller
             $payableHours - $regularLimit,
             0
         );
+
+        if($extendedHours != 0) {
+            $overtimeHours -= $extendedHours;
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -337,6 +417,12 @@ class DailyTimeRecordController extends Controller
                     2
                 ),
 
+            'extended_hours' =>
+                round(
+                    $extendedHours,
+                    2
+                ),
+
             'late_hours' =>
                 round(
                     $lateHours,
@@ -381,5 +467,16 @@ class DailyTimeRecordController extends Controller
         }
 
         return $minutes / 60;
+    }
+
+    public function assignments(User $employee)
+    {
+        $employee->load([
+            'areas.branches'
+        ]);
+
+        return response()->json([
+            'areas' => $employee->areas
+        ]);
     }
 }

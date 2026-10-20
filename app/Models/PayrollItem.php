@@ -16,8 +16,7 @@ class PayrollItem extends Model
         'description',
         'quantity',
         'rate',
-        'amount',
-        'remarks'
+        'amount'
     ];
 
     public function payroll()
