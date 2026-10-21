@@ -257,13 +257,16 @@
       <li class="nav-item {{ active_class(['basic-ui/clients']) }}">
           <a class="nav-link" data-toggle="collapse" href="#clients" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
               <i class="menu-icon mdi mdi-office-building"></i>
-              <span class="menu-title">Payroll Settings</span>
+              <span class="menu-title">Payroll Configurations</span>
               <i class="menu-arrow"></i>
           </a>
           <div class="collapse {{ show_class(['basic-ui/clients']) }}" id="clients">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
                       <a class="nav-link" href="{{ url('/sss-contributions') }}">SSS table</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
+                      <a class="nav-link" href="{{ url('/pay-rates') }}">Basic Pay Rates</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/payroll-rates') }}">Payroll Rates</a>
