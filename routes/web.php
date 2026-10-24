@@ -15,6 +15,17 @@
 //use App\Http\Controllers\AreaController;
 //use App\Http\Controllers\BranchController;
 //use App\Http\Controllers\PayrollPeriodController;//
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\DailyTimeRecordController;
+//use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\Arms\ArmDashboardController;
+use App\Http\Controllers\Arms\ArmAssignmentController;
+use App\Http\Controllers\Arms\ArmMaintenanceController;
+use App\Http\Controllers\Arms\ArmInspectionController;
+use App\Http\Controllers\Arms\ArmLicenseController;
+use App\Http\Controllers\Arms\AmmunitionController;
+use App\Http\Controllers\Arms\AmmunitionReleaseController;
+
 
 Auth::routes();
 
@@ -158,7 +169,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::post(
         'payrolls/{payroll}/mark-paid',
-        [PayrollController::class, 'markPaid']
+        [\App\Http\Controllers\PayrollController::class, 'markPaid']
     )->name('payrolls.mark-paid');
 
     // Government Deduction
@@ -464,6 +475,28 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::post('/pay-rates', [\App\Http\Controllers\PayRateController::class, 'store'])
         ->name('pay-rates.store');
+
+    // Billing Routes
+
+    Route::get('/billing', [\App\Http\Controllers\BillingController::class, 'index'])
+        ->name('billing.index');
+
+    Route::post('/billing/preview-start', [\App\Http\Controllers\BillingController::class, 'preview'])
+        ->name('billing.preview.start');
+
+    Route::post('/billing/generate', [\App\Http\Controllers\BillingController::class, 'generate'])
+        ->name('billing.generate');
+
+    Route::get('/billing/{billing}', [\App\Http\Controllers\BillingController::class, 'show'])
+        ->name('billing.show');
+
+    Route::get('/billing/{billing}/print', [\App\Http\Controllers\BillingController::class, 'print'])
+        ->name('billing.print');
+
+    Route::get('/billing/periods/{period}/excel-preview', [
+        \App\Http\Controllers\BillingExcelPreviewController::class, 'show'
+    ])->name('billing.excel-preview');
+
 
 
 

@@ -17,6 +17,7 @@ class PayrollCalculationService
         $regularHours = 0;
         $overtimeHours = 0;
         $specialOvertimeHours = 0;
+        $regularHolidayOvertimeHours = 0;
         $nightDiffHours = 0;
 
         $lateMinutes = 0;
@@ -25,6 +26,7 @@ class PayrollCalculationService
         $basicPay = 0;
         $regularOvertimePay = 0;
         $specialOvertimePay = 0;
+        $regularHolidayOvertimePay = 0;
         $nightDiffPay = 0;
         $holidayPay = 0;
         $spHolidayPay = 0;
@@ -164,9 +166,16 @@ class PayrollCalculationService
 
             $dtrRegularOvertimePay = 0;
             $dtrSpecialOvertimePay = 0;
+            $dtrRegularHolidayOvertimePay = 0;
 
             if ($totalOvertimeHours > 0) {
-                if ($isSunday || $dtr->special_holiday) {
+                // Regular/legal holiday overtime takes precedence, even if it is Sunday.
+                if ($dtr->is_holiday) {
+                    $regularHolidayOvertimeHours += $totalOvertimeHours;
+                    $dtrRegularHolidayOvertimePay =
+                        $totalOvertimeHours * $hourlyRate * 2.60;
+                    $regularHolidayOvertimePay += $dtrRegularHolidayOvertimePay;
+                } elseif ($isSunday || $dtr->special_holiday) {
                     $specialOvertimeHours += $totalOvertimeHours;
 
                     $dtrSpecialOvertimePay =
@@ -216,10 +225,12 @@ class PayrollCalculationService
                     'regular_hours' => 0,
                     'overtime_hours' => 0,
                     'special_overtime_hours' => 0,
+                    'regular_holiday_overtime_hours' => 0,
                     'night_diff_hours' => 0,
                     'basic_pay' => 0,
                     'regular_overtime_pay' => 0,
                     'special_overtime_pay' => 0,
+                    'regular_holiday_overtime_pay' => 0,
                     'night_diff_pay' => 0,
                     'holiday_pay' => 0,
                     'sp_holiday_pay' => 0,
@@ -238,11 +249,15 @@ class PayrollCalculationService
                 ($dtrRegularOvertimePay > 0) ? $totalOvertimeHours : 0;
             $rateBreakdown[$key]['special_overtime_hours'] +=
                 ($dtrSpecialOvertimePay > 0) ? $totalOvertimeHours : 0;
+            $rateBreakdown[$key]['regular_holiday_overtime_hours'] +=
+                ($dtrRegularHolidayOvertimePay > 0) ? $totalOvertimeHours : 0;
             $rateBreakdown[$key]['night_diff_hours'] += $dtrNightDiffHours;
 
             $rateBreakdown[$key]['basic_pay'] += $dtrBasicPay;
             $rateBreakdown[$key]['regular_overtime_pay'] += $dtrRegularOvertimePay;
             $rateBreakdown[$key]['special_overtime_pay'] += $dtrSpecialOvertimePay;
+            $rateBreakdown[$key]['regular_holiday_overtime_pay'] +=
+                $dtrRegularHolidayOvertimePay;
             $rateBreakdown[$key]['night_diff_pay'] += $dtrNightDiffPay;
             $rateBreakdown[$key]['holiday_pay'] +=
                 $dtr->is_holiday ? $holidayAmount : 0;
@@ -261,6 +276,7 @@ class PayrollCalculationService
             $basicPay
             + $regularOvertimePay
             + $specialOvertimePay
+            + $regularHolidayOvertimePay
             + $nightDiffPay
             + $holidayPay
             + $spHolidayPay;
@@ -271,6 +287,7 @@ class PayrollCalculationService
                          'regular_hours',
                          'overtime_hours',
                          'special_overtime_hours',
+                         'regular_holiday_overtime_hours',
                          'night_diff_hours',
                          'late_minutes',
                          'undertime_minutes',
@@ -282,6 +299,7 @@ class PayrollCalculationService
                          'basic_pay',
                          'regular_overtime_pay',
                          'special_overtime_pay',
+                         'regular_holiday_overtime_pay',
                          'night_diff_pay',
                          'holiday_pay',
                          'sp_holiday_pay',
@@ -301,6 +319,7 @@ class PayrollCalculationService
                 'holiday_pay' => round($holidayPay, 2),
                 'sp_holiday_pay' => round($spHolidayPay, 2),
                 'special_overtime_pay' => round($specialOvertimePay, 2),
+                'regular_holiday_overtime_pay' => round($regularHolidayOvertimePay, 2),
                 'overall_pay' => round($overallPay, 2),
             ],
 
@@ -315,6 +334,7 @@ class PayrollCalculationService
                 'regular_hours' => round($regularHours, 2),
                 'overtime_hours' => round($overtimeHours, 2),
                 'special_overtime_hours' => round($specialOvertimeHours, 2),
+                'regular_holiday_overtime_hours' => round($regularHolidayOvertimeHours, 2),
                 'night_diff_hours' => round($nightDiffHours, 2),
                 'late_minutes' => round($lateMinutes, 2),
                 'undertime_minutes' => round($undertimeMinutes, 2),

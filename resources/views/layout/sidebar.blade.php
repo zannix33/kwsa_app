@@ -99,7 +99,7 @@
                   </li>
 
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="#">Billing</a>
+                      <a class="nav-link" href="{{route('billing.index')}}">Billing</a>
                   </li>
 
               </ul>

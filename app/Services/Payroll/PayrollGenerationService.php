@@ -264,6 +264,18 @@ class PayrollGenerationService
                     );
                 }
 
+                // Regular/legal holiday overtime (260%).
+                if ($breakdown['regular_holiday_overtime_pay'] > 0) {
+                    PayrollItemService::earning(
+                        $payroll,
+                        'REGHOLIDAYOT',
+                        'Regular Holiday Overtime (' . $rateLabel . ')',
+                        $breakdown['regular_holiday_overtime_pay'],
+                        $breakdown['regular_holiday_overtime_hours'],
+                        $breakdown['hourly_rate'] * 2.60
+                    );
+                }
+
                 // Night differential
                 if ($breakdown['night_diff_pay'] > 0) {
                     PayrollItemService::earning(
