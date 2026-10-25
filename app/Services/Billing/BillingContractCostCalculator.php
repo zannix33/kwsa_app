@@ -12,6 +12,7 @@ namespace App\Services\Billing;
  * - SSS premium is a fixed total of PHP 2,200 per guard per month.
  * - PhilHealth is 2.5% of average monthly pay.
  * - Pag-IBIG is PHP 200 fixed.
+ * - ECC contribution is PHP 30 fixed per guard per month.
  * - Uniform allowance is PHP 100, matching the supplied workbook example.
  */
 class BillingContractCostCalculator
@@ -29,6 +30,7 @@ class BillingContractCostCalculator
         $sssPremium = 2200.00;
         $philHealth = $averagePayMonth * 0.025;
         $pagIbig = 200.00;
+        $eccContribution = 30.00;
         $uniformAllowance = 100.00;
 
         // The subtotal excludes retirement because the workbook presents the
@@ -40,7 +42,8 @@ class BillingContractCostCalculator
             + $uniformAllowance
             + $sssPremium
             + $philHealth
-            + $pagIbig;
+            + $pagIbig
+            + $eccContribution;
 
         return [
             'daily_pay_rate' => round($dailyPayRate, 2),
@@ -51,6 +54,7 @@ class BillingContractCostCalculator
             'sss_premium' => round($sssPremium, 2),
             'philhealth' => round($philHealth, 2),
             'pagibig' => round($pagIbig, 2),
+            'ecc_contribution' => round($eccContribution, 2),
             'retirement_contribution' => round($retirementContribution, 2),
             'contract_cost_excluding_retirement' => round($contractCostExcludingRetirement, 2),
             'contract_cost_including_retirement' => round($contractCostExcludingRetirement + $retirementContribution, 2),
