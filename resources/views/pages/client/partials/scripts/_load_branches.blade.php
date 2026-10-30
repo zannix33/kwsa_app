@@ -84,15 +84,13 @@
 
                             <br>
 
-                            <small class="text-muted">
+                            <small class="text-muted branch-address" style="display:block; max-width:100%; white-space:normal; overflow-wrap:anywhere; word-break:break-word;">
 
                                 ${escapeHtml(branch.address ?? '')}
 
                             </small>
 
-                            <br>
-
-                            <small class="text-muted">
+                            <small class="text-muted branch-location" style="display:block; max-width:100%; white-space:normal; overflow-wrap:anywhere; word-break:break-word;">
 
                                 ${escapeHtml(branch.baranggay ?? '')}
 
