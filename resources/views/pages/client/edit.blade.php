@@ -9,11 +9,11 @@
 
         <div class="row mb-3">
             <div class="col-md-6">
-                <h3>Edit Company</h3>
+                <h3>Edit Client Group</h3>
             </div>
 
             <div class="col-md-6 text-right">
-                <a href="{{ route('clients.companies.index') }}" class="btn btn-secondary">
+                <a href="{{ route('clients.index') }}" class="btn btn-secondary">
                     <i class="fa fa-arrow-left"></i> Back
                 </a>
             </div>
@@ -31,23 +31,23 @@
 
         <div class="card shadow">
             <div class="card-header">
-                Edit Company Information
+                Edit Client Group Information
             </div>
 
             <div class="card-body">
 
-                <form action="{{ route('clients.companies.update', $company->id) }}" method="POST">
+                <form action="{{ route('clients.update', $client->id) }}" method="POST">
                     @csrf
                     @method('PUT')
 
                     <div class="form-group">
-                        <label for="name">Company Name</label>
+                        <label for="name">Client Name</label>
                         <input
                             type="text"
                             class="form-control"
                             id="name"
                             name="name"
-                            value="{{ old('name', $company->name) }}"
+                            value="{{ old('name', $client->name) }}"
                             required>
                     </div>
 
@@ -61,17 +61,17 @@
                             <option value="">-- Select Category --</option>
 
                             <option value="company"
-                                {{ old('category', $company->category) == 'company' ? 'selected' : '' }}>
+                                {{ old('category', $client->category) == 'company' ? 'selected' : '' }}>
                                 Company
                             </option>
 
                             <option value="property"
-                                {{ old('category', $company->category) == 'property' ? 'selected' : '' }}>
+                                {{ old('category', $client->category) == 'property' ? 'selected' : '' }}>
                                 Property
                             </option>
 
                             <option value="individual"
-                                {{ old('category', $company->category) == 'individual' ? 'selected' : '' }}>
+                                {{ old('category', $client->category) == 'individual' ? 'selected' : '' }}>
                                 Individual
                             </option>
                         </select>
@@ -85,7 +85,7 @@
                             id="age_limit"
                             name="age_limit"
                             min="0"
-                            value="{{ old('age_limit', $company->age_limit) }}">
+                            value="{{ old('age_limit', $client->age_limit) }}">
                         <small class="text-muted">
                             Leave blank if there is no age restriction.
                         </small>
@@ -100,12 +100,12 @@
                             required>
 
                             <option value="1"
-                                {{ old('active', $company->active) == 1 ? 'selected' : '' }}>
+                                {{ old('active', $client->active) == 1 ? 'selected' : '' }}>
                                 Active
                             </option>
 
                             <option value="0"
-                                {{ old('active', $company->active) == 0 ? 'selected' : '' }}>
+                                {{ old('active', $client->active) == 0 ? 'selected' : '' }}>
                                 Inactive
                             </option>
 
@@ -114,7 +114,7 @@
 
                     <div class="text-right">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save"></i> Update Company
+                            <i class="fa fa-save"></i> Update Client
                         </button>
                     </div>
 

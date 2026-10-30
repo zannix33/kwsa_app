@@ -16,6 +16,7 @@ class BranchController extends Controller
         $validated = $request->validate([
 
             'area_id' => 'required|exists:areas,id',
+            'company_id' => 'nullable|exists:companies,id',
 
             'name' => 'required|string|max:255',
 
@@ -29,7 +30,20 @@ class BranchController extends Controller
 
             'operation_end' => 'nullable|date_format:H:i|after:operation_start',
 
+            'operation_saturday_start' => 'nullable|date_format:H:i',
+
+            'operation_saturday_end' => 'nullable|date_format:H:i|after:operation_saturday_start',
+
+            'operation_sunday_start' => 'nullable|date_format:H:i',
+
+            'operation_sunday_end' => 'nullable|date_format:H:i|after:operation_sunday_start',
+
         ]);
+
+        if (!empty($validated['company_id'])) {
+            $area = \App\Models\Area::findOrFail($validated['area_id']);
+            abort_unless(\App\Models\Company::where('id', $validated['company_id'])->where('client_id', $area->client_id)->exists(), 422, 'Selected Company does not belong to this Client.');
+        }
 
         $branch = Branch::create($validated);
 
@@ -51,6 +65,8 @@ class BranchController extends Controller
     {
         $validated = $request->validate([
 
+            'company_id' => 'nullable|exists:companies,id',
+
             'name' => 'required|string|max:255',
 
             'address' => 'nullable|string',
@@ -63,7 +79,20 @@ class BranchController extends Controller
 
             'operation_end' => 'nullable|date_format:H:i|after:operation_start',
 
+            'operation_saturday_start' => 'nullable|date_format:H:i',
+
+            'operation_saturday_end' => 'nullable|date_format:H:i|after:operation_saturday_start',
+
+            'operation_sunday_start' => 'nullable|date_format:H:i',
+
+            'operation_sunday_end' => 'nullable|date_format:H:i|after:operation_sunday_start',
+
         ]);
+
+        if (!empty($validated['company_id'])) {
+            $area = $branch->area;
+            abort_unless(\App\Models\Company::where('id', $validated['company_id'])->where('client_id', $area->client_id)->exists(), 422, 'Selected Company does not belong to this Client.');
+        }
 
         $branch->update($validated);
 

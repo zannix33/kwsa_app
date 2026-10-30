@@ -73,7 +73,7 @@
           <div class="collapse {{ show_class(['basic-ui/clients']) }}" id="clients">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ route('clients.companies.index') }}">Companies</a>
+                      <a class="nav-link" href="{{ route('clients.index') }}">Companies</a>
                   </li>
                   {{--
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">

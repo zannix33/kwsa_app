@@ -1,10 +1,12 @@
 <div class="modal fade" id="branchModal" tabindex="-1" role="dialog" aria-labelledby="branchModalLabel" aria-hidden="true">
 
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog" role="document">
 
         <form id="branchForm">
 
             @csrf
+
+            <input type="hidden" name="branch_id" id="branch_id">
 
             <input type="hidden"
                    name="area_id"
@@ -29,6 +31,7 @@
                 </div>
 
                 <div class="modal-body">
+                    <div class="form-group"><label for="branch_company_id">Company (Optional)</label><select class="form-control" name="company_id" id="branch_company_id"><option value="">-- No Company Assigned --</option>@foreach($client->companies as $branchCompany)<option value="{{ $branchCompany->id }}">{{ $branchCompany->name }}</option>@endforeach</select><small class="text-muted">A branch can be assigned to only one company.</small></div>
 
                     <div class="alert alert-danger d-none"
                          id="branch-errors">
@@ -104,6 +107,31 @@
 
                         </div>
 
+                    </div>
+
+                    <hr>
+                    <h6 class="mb-3">Saturday Operation Hours</h6>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Saturday Start</label>
+                            <input type="time" name="operation_saturday_start" class="form-control">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Saturday End</label>
+                            <input type="time" name="operation_saturday_end" class="form-control">
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Sunday Operation Hours</h6>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Sunday Start</label>
+                            <input type="time" name="operation_sunday_start" class="form-control">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Sunday End</label>
+                            <input type="time" name="operation_sunday_end" class="form-control">
+                        </div>
                     </div>
 
                 </div>

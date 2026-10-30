@@ -26,6 +26,7 @@
                 <tr>
                     <th>Branch</th>
                     <th width="180">Operation Hours</th>
+                    <th width="90" class="text-center">Action</th>
                 </tr>
 
                 </thead>
@@ -34,7 +35,7 @@
 
                 <tr>
 
-                    <td colspan="2"
+                    <td colspan="3"
                         class="text-center text-muted">
 
                         Select an Area to load branches

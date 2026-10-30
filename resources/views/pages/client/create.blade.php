@@ -12,7 +12,7 @@
 
                 <div class="card shadow">
                     <div class="card-header">
-                        <h4>Create Client</h4>
+                        <h4>Create Client Group</h4>
                     </div>
 
                     <div class="card-body">
@@ -27,7 +27,7 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('clients.companies.store') }}" method="POST">
+                        <form action="{{ route('clients.store') }}" method="POST">
                         @csrf
 
                         <!-- Company Name -->
@@ -88,12 +88,12 @@
                             </div>
 
                             <div class="text-right">
-                                <a href="{{ route('clients.companies.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('clients.index') }}" class="btn btn-secondary">
                                     Cancel
                                 </a>
 
                                 <button type="submit" class="btn btn-primary">
-                                    Save Company
+                                    Save Client
                                 </button>
                             </div>
 

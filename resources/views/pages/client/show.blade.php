@@ -12,21 +12,21 @@
         <div class="row mb-3">
 
             <div class="col-md-6">
-                <h3 class="mb-0">{{ $company->name }}</h3>
+                <h3 class="mb-0">{{ $client->name }}</h3>
                 <small class="text-muted">
-                    {{ $company->category }}
+                    {{ ucfirst($client->category) }}
                 </small>
             </div>
 
             <div class="col-md-6 text-right">
 
-                <a href="{{ route('clients.companies.edit',$company->id) }}"
+                <a href="{{ route('clients.edit',$client->id) }}"
                    class="btn btn-warning">
                     <i class="fa fa-edit"></i>
-                    Edit Company
+                    Edit Client
                 </a>
 
-                <a href="{{ route('clients.companies.index') }}"
+                <a href="{{ route('clients.index') }}"
                    class="btn btn-secondary">
                     <i class="fa fa-arrow-left"></i>
                     Back
@@ -53,12 +53,12 @@
 
                             <tr>
                                 <th width="150">Name</th>
-                                <td>{{ $company->name }}</td>
+                                <td>{{ $client->name }}</td>
                             </tr>
 
                             <tr>
                                 <th>Category</th>
-                                <td>{{ $company->category }}</td>
+                                <td>{{ ucfirst($client->category) }}</td>
                             </tr>
 
                             <tr>
@@ -91,6 +91,16 @@
 
             </div>
 
+        </div>
+
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center"><strong>Companies under this Client</strong><a class="btn btn-sm btn-primary" href="{{ route('clients.companies.create', $client) }}"><i class="fa fa-plus"></i> Add Company</a></div>
+            <div class="card-body p-0"><table class="table table-bordered table-hover mb-0"><thead class="thead-light"><tr><th>Company</th><th>Status</th><th>Assigned Branches</th><th>Actions</th></tr></thead><tbody>
+            @forelse($client->companies as $listedCompany)
+                <tr><td>{{ $listedCompany->name }}</td><td>@if($listedCompany->active)<span class="badge badge-success">Active</span>@else<span class="badge badge-secondary">Inactive</span>@endif</td><td>{{ $listedCompany->branches()->count() }}</td><td><a class="btn btn-sm btn-warning" href="{{ route('clients.companies.edit', [$client,$listedCompany]) }}">Edit</a><form class="d-inline" method="POST" action="{{ route('clients.companies.destroy', [$client,$listedCompany]) }}" onsubmit="return confirm('Delete this Company?')">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Delete</button></form></td></tr>
+            @empty<tr><td colspan="4" class="text-center text-muted">No companies have been added to this Client.</td></tr>@endforelse
+            </tbody></table></div>
         </div>
 
         {{-- Area / Branch / Guards --}}

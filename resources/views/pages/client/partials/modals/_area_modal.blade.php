@@ -5,6 +5,8 @@
         <form id="areaForm">
             @csrf
 
+            <input type="hidden" name="area_id" id="area_id">
+
             <input type="hidden"
                    name="client_id"
                    value="{{ $company->id }}">

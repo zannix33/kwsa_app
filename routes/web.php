@@ -46,8 +46,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('employee', EmployeeController::class);
     });
 
-    Route::prefix('clients')->name('clients.')->group(function(){
-        Route::resource('companies', CompanyController::class);
+    Route::resource('clients', ClientController::class);
+
+    Route::prefix('clients/{client}/companies')->name('clients.companies.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CompanyController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\CompanyController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\CompanyController::class, 'store'])->name('store');
+        Route::get('/{company}/edit', [\App\Http\Controllers\CompanyController::class, 'edit'])->name('edit');
+        Route::put('/{company}', [\App\Http\Controllers\CompanyController::class, 'update'])->name('update');
+        Route::delete('/{company}', [\App\Http\Controllers\CompanyController::class, 'destroy'])->name('destroy');
     });
 
     // Start of Areas //

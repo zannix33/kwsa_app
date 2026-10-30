@@ -35,13 +35,14 @@
 
         <div class="table-responsive">
 
-            <table class="table table-hover table-bordered mb-0">
+            <table class="table table-hover table-bordered mb-0 w-100" style="table-layout:fixed;">
 
                 <thead class="thead-light">
 
                 <tr>
-                    <th>Area</th>
-                    <th width="120">Rate</th>
+                    <th style="width:22%;">Area</th>
+                    <th style="width:58%;">Region</th>
+                    <th style="width:20%;" class="text-center">Action</th>
                 </tr>
 
                 </thead>
@@ -54,7 +55,7 @@
                         data-id="{{ $area->id }}"
                         style="cursor:pointer;">
 
-                        <td>
+                        <td style="overflow-wrap:anywhere;">
                             <strong>{{ $area->name }}</strong>
 
                             @if($area->description)
@@ -66,19 +67,18 @@
 
                         </td>
 
-                        <td class="text-right">
-
-
-                            @if($area->payroll_rate)
-
-                                {{ number_format($area->payroll_rate,2) }}
-
-                            @else
-
-                                -
-
-                            @endif
-
+                        <td style="overflow-wrap:anywhere;">
+                            {{ optional($area->region)->code }}
+                            @if($area->region) - {{ $area->region->name }} @else - @endif
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit-area" style="white-space:nowrap; padding-left:.4rem; padding-right:.4rem;"
+                                    data-id="{{ $area->id }}"
+                                    data-name="{{ e($area->name) }}"
+                                    data-description="{{ e($area->description) }}"
+                                    data-region-id="{{ $area->region_id }}">
+                                <i class="fa fa-edit"></i> Edit
+                            </button>
                         </td>
 
                     </tr>
@@ -87,7 +87,7 @@
 
                     <tr>
 
-                        <td colspan="2"
+                        <td colspan="3"
                             class="text-center text-muted">
 
                             No Areas Found

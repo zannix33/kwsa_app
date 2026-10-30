@@ -10,6 +10,10 @@
 
     let selectedBranchId = null;
 
+    let editingAreaId = null;
+
+    let editingBranchId = null;
+
 
     /*
     |--------------------------------------------------------------------------
@@ -30,6 +34,10 @@
         createArea: "{{ route('areas.store') }}",
 
         createBranch: "{{ route('branches.store') }}",
+
+        updateAreaBase: "{{ url('/areas') }}",
+
+        updateBranchBase: "{{ url('/branches') }}",
 
         assignAreaGuard: "{{ route('areas.assign.guard') }}",
 

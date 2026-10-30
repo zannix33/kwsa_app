@@ -92,6 +92,7 @@ class AreaController extends Controller
 
             $area->branches()
                 ->orderBy('name')
+                ->with('company:id,name')
                 ->get([
                     'id',
                     'name',
@@ -99,8 +100,16 @@ class AreaController extends Controller
                     'province',
                     'baranggay',
                     'operation_start',
-                    'operation_end'
-                ])
+                    'operation_end',
+                    'operation_saturday_start',
+                    'operation_saturday_end',
+                    'operation_sunday_start',
+                    'operation_sunday_end',
+                    'company_id'
+                ])->map(function ($branch) {
+                    $branch->company_name = optional($branch->company)->name;
+                    return $branch;
+                })
 
         );
     }

@@ -10,7 +10,12 @@
 
         clearErrors('#area-errors');
 
-        $('#areaForm')[0].reset();
+        if (!editingAreaId) {
+            $('#areaForm')[0].reset();
+            $('#area_id').val('');
+            $('#areaModalLabel').text('Create Area');
+            $('#areaForm button[type=submit]').html(editingAreaId ? '<i class="fa fa-save"></i> Update Area' : '<i class="fa fa-save"></i> Save Area');
+        }
 
     });
 
@@ -31,11 +36,13 @@
 
         $.ajax({
 
-            url: "{{ route('areas.store') }}",
+            url: editingAreaId
+                ? urls.updateAreaBase + '/' + editingAreaId
+                : urls.createArea,
 
             type: "POST",
 
-            data: form.serialize(),
+            data: form.serialize() + (editingAreaId ? '&_method=PUT' : ''),
 
             beforeSend: function () {
 
@@ -57,10 +64,9 @@
                 |--------------------------------------------------------------------------
                 */
 
-                selectedAreaId = response.id;
-
+                if (response.id) selectedAreaId = response.id;
                 selectedBranchId = null;
-
+                editingAreaId = null;
                 loadAreas(selectedAreaId);
 
                 /*
@@ -94,7 +100,7 @@
 
                 form.find('button[type=submit]')
                     .prop('disabled', false)
-                    .html('<i class="fa fa-save"></i> Save Area');
+                    .html(editingAreaId ? '<i class="fa fa-save"></i> Update Area' : '<i class="fa fa-save"></i> Save Area');
 
             }
 
@@ -102,4 +108,33 @@
 
     });
 
+</script>
+
+<script>
+    // Edit Area: keep the row-selection click behavior untouched.
+    $(document).on('click', '.btn-edit-area', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $button = $(this);
+        editingAreaId = $button.data('id');
+        clearErrors('#area-errors');
+        $('#areaForm')[0].reset();
+        $('#area_id').val(editingAreaId);
+        $('#areaName').val($button.attr('data-name'));
+        $('#areaDescription').val($button.attr('data-description'));
+        $('#areaModalLabel').text('Edit Area');
+        $('#areaForm button[type=submit]').html('<i class="fa fa-save"></i> Update Area');
+        // Set this BEFORE showing the modal because show.bs.modal loads the region list.
+        // Otherwise the AJAX loader receives an empty ID and the selected region is lost.
+        window.areaEditRegionId = String($button.attr('data-region-id') || '');
+        $('#areaModal').modal('show');
+    });
+
+    $('#areaModal').on('hidden.bs.modal', function () {
+        editingAreaId = null;
+        window.areaEditRegionId = '';
+        $('#area_id').val('');
+        $('#areaModalLabel').text('Create Area');
+        $('#areaForm button[type=submit]').html('<i class="fa fa-save"></i> Save Area');
+    });
 </script>

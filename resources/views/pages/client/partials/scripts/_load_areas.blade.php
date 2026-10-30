@@ -28,7 +28,7 @@
     function loadAreas(selectedId = null)
     {
         $('#areas-table').html(
-            loadingRow(2, 'Loading areas...')
+            loadingRow(3, 'Loading areas...')
         );
 
         $.ajax({
@@ -41,7 +41,7 @@
 
                 if (areas.length === 0) {
                     $('#areas-table').html(
-                        emptyRow(2, 'No Areas Found.')
+                        emptyRow(3, 'No Areas Found.')
                     );
 
                     return;
@@ -64,7 +64,7 @@
         data-id="${area.id}"
         style="cursor:pointer;">
 
-            <td>
+            <td style="overflow-wrap:anywhere;">
             <strong>${escapeHtml(area.name ?? '')}</strong>
         <br>
             <small class="text-muted">
@@ -72,10 +72,16 @@
             </small>
         </td>
 
-        <td>
-            ${escapeHtml(regionName)}
+        <td style="overflow-wrap:anywhere;">${escapeHtml(regionName)}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-primary btn-edit-area" style="white-space:nowrap; padding-left:.4rem; padding-right:.4rem;"
+                data-id="${area.id}"
+                data-name="${escapeHtml(area.name ?? '')}"
+                data-description="${escapeHtml(area.description ?? '')}"
+                data-region-id="${area.region_id ?? ''}">
+                <i class="fa fa-edit"></i> Edit
+            </button>
         </td>
-
         </tr>
         `;
                 });
@@ -95,7 +101,7 @@
 
             error: function() {
                 $('#areas-table').html(
-                    errorRow(2, 'Unable to load Areas.')
+                    errorRow(3, 'Unable to load Areas.')
                 );
             }
         });

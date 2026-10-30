@@ -36,36 +36,6 @@
 
     /*
     |--------------------------------------------------------------------------
-    | Create Branch
-    |--------------------------------------------------------------------------
-    |
-    | A branch cannot exist without an Area.
-    |
-    */
-
-    $('#btnCreateBranch').click(function () {
-
-        if (selectedAreaId == null) {
-
-            alert('Please select an Area first.');
-
-            return;
-
-        }
-
-        clearErrors('#branch-errors');
-
-        $('#branchForm')[0].reset();
-
-        $('#branch_area_id').val(selectedAreaId);
-
-        $('#branchModal').modal('show');
-
-    });
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Double Click (Reserved)
     |--------------------------------------------------------------------------
     |
@@ -76,7 +46,7 @@
 
     $(document).on('dblclick', '.branch-item', function () {
 
-        // editBranch($(this).data('id'));
+        // Editing is handled by the explicit Edit button.
 
     });
 
