@@ -13,6 +13,7 @@ class Billing extends Model
 
     protected $fillable = [
         'client_id',
+        'company_id',
         'area_id',
         'payroll_period_id',
         'invoice_number',
@@ -47,6 +48,11 @@ class Billing extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Company::class);
     }
 
     public function area(): BelongsTo

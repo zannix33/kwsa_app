@@ -19,6 +19,7 @@ th{background:#dce8f4;font-weight:bold}td.left,th.left{text-align:left}
 </head>
 <body>
 <div class="no-print"><button onclick="window.print()">Print preview</button></div>
+@if(!empty($data['unassigned_branches']))<p class="note"><strong>Excluded — branches without an assigned company:</strong> @foreach($data['unassigned_branches'] as $b){{ $b['area_name'] }} / {{ $b['branch_name'] }}@if(!$loop->last); @endif @endforeach</p>@endif
 @foreach($areas as $area)
 <section class="sheet">
 <h1>KINGWIZARD SECURITY AGENCY — Billing worksheet preview</h1>
@@ -45,7 +46,7 @@ th{background:#dce8f4;font-weight:bold}td.left,th.left{text-align:left}
 $sum = array_fill_keys(['base','ot_reg','ot_special','ot_legal','nd_reg','nd_special','nd_legal','deduction','subtotal','admin','ewt','retirement','grand'],0.0);
 @endphp
 @foreach($area['branches'] as $branch)
-<tr class="branch"><td colspan="25">{{ $branch['branch_name'] }}</td></tr>
+<tr class="branch"><td colspan="25">{{ $branch['branch_name'] }} — {{ $branch['company_name'] ?? 'Company not assigned' }}</td></tr>
 @foreach($branch['guards'] as $guard)
 @php
 $rate = (float) $guard['billing_daily_rate'];

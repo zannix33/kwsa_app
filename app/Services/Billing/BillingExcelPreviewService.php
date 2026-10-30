@@ -17,6 +17,10 @@ class BillingExcelPreviewService
     public function build(PayrollPeriod $period): array
     {
         $data = $this->source->buildForPeriod($period); // validates closed period
+        $data['areas'] = array_map(function ($area) {
+            $area['branches'] = array_values(array_filter($area['branches'], function ($branch) { return !empty($branch['company_id']); }));
+            return $area;
+        }, $data['areas']);
         foreach ($data['areas'] as &$area) {
             $area['billing_totals'] = $this->zeroTotals();
             foreach ($area['branches'] as &$branch) {

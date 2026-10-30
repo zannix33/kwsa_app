@@ -70,7 +70,7 @@
 $(document).ready(function () {
 
     $('#areaModal').on('show.bs.modal', function () {
-        loadAreaRegions();
+        loadAreaRegions(window.areaEditRegionId || '');
     });
 
     function loadAreaRegions(selectedRegionId = '') {

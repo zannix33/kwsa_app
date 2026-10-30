@@ -16,7 +16,7 @@ class BillingController extends Controller
             ->orderByDesc('date_from')
             ->get();
 
-        $billings = Billing::with(['client', 'area', 'payrollPeriod'])
+        $billings = Billing::with(['client', 'company', 'area', 'payrollPeriod'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -52,22 +52,25 @@ class BillingController extends Controller
         $period = PayrollPeriod::findOrFail($validated['payroll_period_id']);
         $this->ensurePeriodClosed($period);
 
-        $createdBills = $billingGenerationService->generate($period);
-
-        return redirect()->route('billing.index')
-            ->with('success', $createdBills->count() . ' draft bill(s) generated successfully.');
+        $result = $billingGenerationService->generate($period);
+        $createdBills = $result['billings'];
+        $redirect = redirect()->route('billing.index')->with('success', $createdBills->count() . ' draft bill(s) generated successfully.');
+        if (!empty($result['unassigned_branches'])) {
+            $redirect->with('unassigned_branches', $result['unassigned_branches']);
+        }
+        return $redirect;
     }
 
     public function show(Billing $billing)
     {
-        $billing->load(['client', 'area', 'payrollPeriod', 'items.branch', 'items.user', 'items.payrollItem']);
+        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'items.branch', 'items.user', 'items.payrollItem']);
         return view('pages.billing.show', compact('billing'));
     }
 
     /** Show a print-optimized version of a bill. */
     public function print(Billing $billing)
     {
-        $billing->load(['client', 'area', 'payrollPeriod', 'items.branch', 'items.user']);
+        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'items.branch', 'items.user']);
         return view('pages.billing.print', compact('billing'));
     }
 

@@ -8,7 +8,8 @@
 <div class="container">
     <h1>Billing</h1>
 
-    @if(session('success'))
+    @if(session('unassigned_branches'))<div class="alert alert-warning"><strong>Skipped branches with no assigned company:</strong><ul>@foreach(session('unassigned_branches') as $branch)<li>{{ $branch['area_name'] }} — {{ $branch['branch_name'] }}</li>@endforeach</ul></div>@endif
+@if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 

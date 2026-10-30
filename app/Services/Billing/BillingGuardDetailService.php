@@ -38,7 +38,7 @@ class BillingGuardDetailService
         $dtrs = DailyTimeRecord::query()
             ->whereIn('payroll_id', $payrollIds)
             ->whereBetween('work_date', [$period->date_from, $period->date_to])
-            ->with(['user', 'area.region', 'branch.area.region'])
+            ->with(['user', 'area.region', 'branch.area.region', 'branch.company'])
             ->orderBy('area_id')
             ->orderBy('branch_id')
             ->orderBy('user_id')
@@ -52,6 +52,7 @@ class BillingGuardDetailService
         }
 
         $areas = [];
+        $unassignedBranches = [];
 
         foreach ($dtrs as $dtr) {
             $area = $dtr->area ?: optional($dtr->branch)->area;
@@ -67,6 +68,11 @@ class BillingGuardDetailService
                 throw ValidationException::withMessages([
                     'billing' => "DTR #{$dtr->id} has no branch assignment; billing rows require a branch.",
                 ]);
+            }
+
+            if (empty($branch->company_id)) {
+                $unassignedBranches[$area->id.'|'.$branch->id] = ['area_name' => $area->name, 'branch_name' => $branch->name];
+                continue;
             }
 
             if (!$dtr->user) {
@@ -99,6 +105,8 @@ class BillingGuardDetailService
                 $areas[$areaKey]['branches'][$branchKey] = [
                     'branch_id' => $branch->id,
                     'branch_name' => $branch->name,
+                    'company_id' => $branch->company_id,
+                    'company_name' => optional($branch->company)->name,
                     'guards' => [],
                 ];
             }
@@ -223,6 +231,7 @@ class BillingGuardDetailService
                 'date_to' => Carbon::parse($period->date_to)->toDateString(),
             ],
             'areas' => array_values($areas),
+            'unassigned_branches' => array_values($unassignedBranches),
         ];
     }
 
