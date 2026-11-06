@@ -179,6 +179,16 @@ Route::group(['middleware' => ['auth']], function () {
         [\App\Http\Controllers\PayrollController::class, 'markPaid']
     )->name('payrolls.mark-paid');
 
+    // Fixed employee deductions (separate from loans)
+    Route::resource('employee-deductions', EmployeeDeductionController::class)
+        ->only(['index', 'create', 'store', 'show']);
+    Route::post('employee-deductions/{employeeDeduction}/toggle',
+        [\App\Http\Controllers\EmployeeDeductionController::class, 'toggle'])
+        ->name('employee-deductions.toggle');
+    Route::post('employee-deductions/{employeeDeduction}/mark-paid',
+        [\App\Http\Controllers\EmployeeDeductionController::class, 'markPaid'])
+        ->name('employee-deductions.mark-paid');
+
     // Government Deduction
     Route::resource(
         'sss',

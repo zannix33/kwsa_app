@@ -61,6 +61,12 @@ class BillingGenerationService
                         'source' => 'excel_preview', 'company_id' => $group['company_id'],
                         'company_name' => $group['company_name'], 'period_id' => $period->id,
                         'guard_count' => $rows->count(), 'unassigned_branches_excluded' => $unassigned,
+                        'premium_policy' => [
+                            'client_id' => $group['area']['client_id'] ?? null,
+                            'apply_overtime_rate' => $group['area']['apply_overtime_rate'] ?? true,
+                            'apply_night_diff_rate' => $group['area']['apply_night_diff_rate'] ?? true,
+                            'premium_combination_method' => $group['area']['premium_combination_method'] ?? 'billing_formula',
+                        ],
                     ],
                 ]);
                 foreach ($rows as $guard) {

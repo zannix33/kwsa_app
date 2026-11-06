@@ -248,7 +248,7 @@ class PayrollGenerationService
                         'Regular Overtime (' . $rateLabel . ')',
                         $breakdown['regular_overtime_pay'],
                         $breakdown['overtime_hours'],
-                        $breakdown['hourly_rate'] * 1.25
+                        $breakdown['regular_overtime_rate']
                     );
                 }
 
@@ -260,7 +260,7 @@ class PayrollGenerationService
                         'Special Overtime (' . $rateLabel . ')',
                         $breakdown['special_overtime_pay'],
                         $breakdown['special_overtime_hours'],
-                        $breakdown['hourly_rate'] * 1.69
+                        $breakdown['special_overtime_rate']
                     );
                 }
 
@@ -272,7 +272,7 @@ class PayrollGenerationService
                         'Regular Holiday Overtime (' . $rateLabel . ')',
                         $breakdown['regular_holiday_overtime_pay'],
                         $breakdown['regular_holiday_overtime_hours'],
-                        $breakdown['hourly_rate'] * 2.60
+                        $breakdown['regular_holiday_overtime_rate']
                     );
                 }
 
@@ -284,7 +284,7 @@ class PayrollGenerationService
                         'Night Differential (' . $rateLabel . ')',
                         $breakdown['night_diff_pay'],
                         $breakdown['night_diff_hours'],
-                        $breakdown['hourly_rate'] * 0.10
+                        $breakdown['night_diff_rate']
                     );
                 }
 
@@ -466,6 +466,9 @@ class PayrollGenerationService
                 $payroll
             );
 
+            // Fixed employee deductions are independent of loan schedules.
+            $this->applyFixedEmployeeDeductions($user, $period, $payroll);
+
             // Recalculate payroll after all deductions are added.
             PayrollItemService::recalculate(
                 $payroll
@@ -484,6 +487,77 @@ class PayrollGenerationService
                 'payroll_id' => $payroll->id
             ]);
         });
+    }
+
+    /**
+     * Apply fixed employee deductions automatically to the matching payroll.
+     * A configured count of zero means unlimited until manually marked paid or inactive.
+     */
+    protected function applyFixedEmployeeDeductions(User $user, PayrollPeriod $period, Payroll $payroll)
+    {
+        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
+
+        $schedules = \App\Models\EmployeeDeduction::where('user_id', $user->id)
+            ->where('status', 'Active')->get();
+
+        foreach ($schedules as $schedule) {
+            $effectiveDate = \Carbon\Carbon::parse($schedule->start_date)->startOfDay();
+            if ($periodEnd->lt($effectiveDate)) {
+                continue;
+            }
+            if ($schedule->end_date && $periodStart->gt(\Carbon\Carbon::parse($schedule->end_date)->endOfDay())) {
+                continue;
+            }
+
+            // Monthly schedules run only on the selected semi-monthly cutoff.
+            if ($schedule->frequency === 'monthly') {
+                $cutoffDay = (int) $periodStart->day;
+                $matchesCutoff = $schedule->monthly_cutoff === 'first'
+                    ? ($cutoffDay >= 1 && $cutoffDay <= 15)
+                    : ($cutoffDay >= 16);
+                if (!$matchesCutoff) {
+                    continue;
+                }
+            }
+
+            // Count both pending applications and completed deductions so that
+            // payrolls generated ahead of approval cannot exceed the configured count.
+            $existingApplications = \App\Models\EmployeeDeductionPeriod::where('employee_deduction_id', $schedule->id);
+            $applicationCount = (clone $existingApplications)->count();
+
+            if ($schedule->frequency === 'one_time' && $applicationCount > 0) {
+                continue;
+            }
+            if ((int) $schedule->installment_count > 0 && $applicationCount >= (int) $schedule->installment_count) {
+                continue;
+            }
+
+            $application = \App\Models\EmployeeDeductionPeriod::firstOrCreate(
+                ['employee_deduction_id' => $schedule->id, 'payroll_period_id' => $period->id],
+                ['amount' => $schedule->amount, 'status' => 'Scheduled']
+            );
+
+            if (!$application->wasRecentlyCreated || $application->status !== 'Scheduled') {
+                continue;
+            }
+
+            $alreadyOnPayroll = $payroll->items()->where('code', 'FIXEDDED_' . $schedule->id)->exists();
+            if (!$alreadyOnPayroll) {
+                PayrollItemService::deduction(
+                    $payroll,
+                    'FIXEDDED_' . $schedule->id,
+                    $schedule->description,
+                    (float) $schedule->amount
+                );
+            }
+
+            // Mark as processed only when the associated payroll is marked Paid.
+            $application->update([
+                'payroll_id' => $payroll->id,
+                'amount' => $schedule->amount,
+            ]);
+        }
     }
 
     /**

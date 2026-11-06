@@ -30,12 +30,17 @@ class BillingExcelPreviewService
                     $monthly = (float) $guard['contract_cost']['contract_cost_excluding_retirement'];
                     $retirement = (float) $guard['contract_cost']['retirement_contribution'];
                     $halfMonth = $monthly / 2;
-                    $regularOt = (float) $guard['regular_ot_hours'] * ($daily / 8 * 1.25);
-                    $specialOt = (float) $guard['sunday_special_ot_hours'] * ($daily / 8 * 1.69);
-                    $holidayOt = (float) $guard['regular_holiday_ot_hours'] * ($daily / 8 * 2.60);
-                    $regularNd = (float) $guard['regular_nd_hours'] * ($daily / 8 * 1.25 * .10);
-                    $specialNd = (float) $guard['sunday_special_nd_hours'] * ($daily / 8 * 1.69 * .10);
-                    $holidayNd = (float) $guard['legal_holiday_nd_hours'] * ($daily / 8 * 2.60 * .10);
+                    $applyOvertimePremium = (bool) ($area['apply_overtime_rate'] ?? true);
+                    $applyNightDiffPremium = (bool) ($area['apply_night_diff_rate'] ?? true);
+                    $regularOtMultiplier = $applyOvertimePremium ? 1.25 : 1.0;
+                    $specialOtMultiplier = $applyOvertimePremium ? 1.69 : 1.0;
+                    $holidayOtMultiplier = $applyOvertimePremium ? 2.60 : 1.0;
+                    $regularOt = (float) $guard['regular_ot_hours'] * ($daily / 8 * $regularOtMultiplier);
+                    $specialOt = (float) $guard['sunday_special_ot_hours'] * ($daily / 8 * $specialOtMultiplier);
+                    $holidayOt = (float) $guard['regular_holiday_ot_hours'] * ($daily / 8 * $holidayOtMultiplier);
+                    $regularNd = $applyNightDiffPremium ? (float) $guard['regular_nd_hours'] * ($daily / 8 * $regularOtMultiplier * .10) : 0;
+                    $specialNd = $applyNightDiffPremium ? (float) $guard['sunday_special_nd_hours'] * ($daily / 8 * $specialOtMultiplier * .10) : 0;
+                    $holidayNd = $applyNightDiffPremium ? (float) $guard['legal_holiday_nd_hours'] * ($daily / 8 * $holidayOtMultiplier * .10) : 0;
                     // Workbook T13 = (monthly contract + retirement + 20% agency fee)
                     //                * 12 / 365 / 8. Keep the workbook's basis.
                     $deductionHourly = ($monthly + $retirement + $monthly * .20) * 12 / 365 / 8;
@@ -55,6 +60,12 @@ class BillingExcelPreviewService
                     $penaltyAmount = $penaltyHours * 200;
                     $net = $gross - $penaltyAmount;
                     $guard['billing'] = [
+                        'premium_policy' => [
+                            'client_id' => $area['client_id'] ?? null,
+                            'apply_overtime_rate' => $applyOvertimePremium,
+                            'apply_night_diff_rate' => $applyNightDiffPremium,
+                            'premium_combination_method' => $area['premium_combination_method'] ?? 'billing_formula',
+                        ],
                         'guard_count' => 1,
                         'half_month_rate' => round($halfMonth, 2),
                         'additional_post_days' => $additionalPostDays,
@@ -78,7 +89,7 @@ class BillingExcelPreviewService
                         'net_payable' => round($net, 2),
                     ];
                     foreach ($guard['billing'] as $key => $value) {
-                        if (!isset($area['billing_totals'][$key])) continue;
+                        if (!isset($area['billing_totals'][$key]) || !is_numeric($value)) continue;
                         $area['billing_totals'][$key] += $value;
                         $branch['billing_totals'][$key] += $value;
                     }

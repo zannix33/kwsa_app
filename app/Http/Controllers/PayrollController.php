@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Models\Payroll;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -42,9 +44,28 @@ class PayrollController extends Controller
         Payroll $payroll
     )
     {
-        $payroll->update([
-            'status' => 'Paid'
-        ]);
+        DB::transaction(function () use ($payroll) {
+            $payroll->update(['status' => 'Paid']);
+
+            $applications = \App\Models\EmployeeDeductionPeriod::where('payroll_id', $payroll->id)
+                ->where('status', 'Scheduled')->get();
+
+            foreach ($applications as $application) {
+                $application->update(['status' => 'Processed', 'processed_at' => now()]);
+                $schedule = $application->deduction;
+                if (!$schedule || $schedule->payment_status === 'Fully Paid') {
+                    continue;
+                }
+
+                $limit = (int) $schedule->installment_count;
+                $processedCount = $schedule->periods()->where('status', 'Processed')->count();
+
+                // A zero count means ongoing: only manual Paid/Inactive can stop it.
+                if ($limit > 0 && $processedCount >= $limit) {
+                    $schedule->update(['payment_status' => 'Fully Paid', 'status' => 'Inactive']);
+                }
+            }
+        });
 
         return back()->with(
             'success',

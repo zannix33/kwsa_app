@@ -102,6 +102,14 @@
                       <a class="nav-link" href="{{route('billing.index')}}">Billing</a>
                   </li>
 
+                  <li class="nav-item {{ active_class(['/']) }}">
+                      <a class="nav-link" href="{{ url('/loans') }}">Loans</a>
+                  </li>
+
+                  <li class="nav-item {{ active_class(['employee-deductions*']) }}">
+                      <a class="nav-link" href="{{ route('employee-deductions.index') }}">Deductions</a>
+                  </li>
+
               </ul>
           </div>
       </li>
@@ -145,13 +153,6 @@
                   </li>
               </ul>
           </div>
-      </li>
-
-      <li class="nav-item {{ active_class(['/']) }}">
-          <a class="nav-link" href="{{ url('/loans') }}">
-              <i class="menu-icon mdi mdi-television"></i>
-              <span class="menu-title">Loans</span>
-          </a>
       </li>
 
 

@@ -94,6 +94,9 @@ class PayrollCalculationService
 
             $dailyRate = (float) $payRate->daily_rate;
             $hourlyRate = $dailyRate / 8;
+            $client = $area->client;
+            $applyOvertimePremium = $client ? (bool) $client->apply_overtime_rate : true;
+            $applyNightDiffPremium = $client ? (bool) $client->apply_night_diff_rate : true;
 
             $dailyRateTotal += $dailyRate;
             $hourlyRateTotal += $hourlyRate;
@@ -173,20 +176,20 @@ class PayrollCalculationService
                 if ($dtr->is_holiday) {
                     $regularHolidayOvertimeHours += $totalOvertimeHours;
                     $dtrRegularHolidayOvertimePay =
-                        $totalOvertimeHours * $hourlyRate * 2.60;
+                        $totalOvertimeHours * $hourlyRate * ($applyOvertimePremium ? 2.60 : 1.0);
                     $regularHolidayOvertimePay += $dtrRegularHolidayOvertimePay;
                 } elseif ($isSunday || $dtr->special_holiday) {
                     $specialOvertimeHours += $totalOvertimeHours;
 
                     $dtrSpecialOvertimePay =
-                        $totalOvertimeHours * $hourlyRate * 1.69;
+                        $totalOvertimeHours * $hourlyRate * ($applyOvertimePremium ? 1.69 : 1.0);
 
                     $specialOvertimePay += $dtrSpecialOvertimePay;
                 } else {
                     $overtimeHours += $totalOvertimeHours;
 
                     $dtrRegularOvertimePay =
-                        $totalOvertimeHours * $hourlyRate * 1.25;
+                        $totalOvertimeHours * $hourlyRate * ($applyOvertimePremium ? 1.25 : 1.0);
 
                     $regularOvertimePay += $dtrRegularOvertimePay;
                 }
@@ -195,8 +198,16 @@ class PayrollCalculationService
             /*
              * Night differential and attendance deductions.
              */
-            $dtrNightDiffPay =
-                $dtrNightDiffHours * $hourlyRate * 0.10;
+            // Billing formula: ND is 10% of the applicable OT-adjusted
+            // hourly rate. If OT premium is disabled, the ND basis is base rate.
+            $nightDiffMultiplier = $dtr->is_holiday
+                ? ($applyOvertimePremium ? 2.60 : 1.0)
+                : (($isSunday || $dtr->special_holiday)
+                    ? ($applyOvertimePremium ? 1.69 : 1.0)
+                    : ($applyOvertimePremium ? 1.25 : 1.0));
+            $dtrNightDiffPay = $applyNightDiffPremium
+                ? $dtrNightDiffHours * $hourlyRate * $nightDiffMultiplier * 0.10
+                : 0;
 
             $nightDiffPay += $dtrNightDiffPay;
 
@@ -213,11 +224,14 @@ class PayrollCalculationService
              * Rate-specific breakdown.
              * Use the effective rate ID as the grouping key.
              */
-            $key = (string) $payRate->id;
+            $key = implode('|', [(string) $payRate->id, (string) ($area->client_id ?? 0), (int) $applyOvertimePremium, (int) $applyNightDiffPremium]);
 
             if (!isset($rateBreakdown[$key])) {
                 $rateBreakdown[$key] = [
                     'pay_rate_id' => $payRate->id,
+                    'client_id' => $area->client_id,
+                    'apply_overtime_rate' => $applyOvertimePremium,
+                    'apply_night_diff_rate' => $applyNightDiffPremium,
                     'region_id' => $area->region_id,
                     'daily_rate' => $dailyRate,
                     'hourly_rate' => round($hourlyRate, 6),
@@ -232,6 +246,10 @@ class PayrollCalculationService
                     'special_overtime_pay' => 0,
                     'regular_holiday_overtime_pay' => 0,
                     'night_diff_pay' => 0,
+                    'regular_overtime_rate_total' => 0,
+                    'special_overtime_rate_total' => 0,
+                    'regular_holiday_overtime_rate_total' => 0,
+                    'night_diff_rate_total' => 0,
                     'holiday_pay' => 0,
                     'sp_holiday_pay' => 0,
                     'late_minutes' => 0,
@@ -259,6 +277,10 @@ class PayrollCalculationService
             $rateBreakdown[$key]['regular_holiday_overtime_pay'] +=
                 $dtrRegularHolidayOvertimePay;
             $rateBreakdown[$key]['night_diff_pay'] += $dtrNightDiffPay;
+            $rateBreakdown[$key]['regular_overtime_rate_total'] += $dtrRegularOvertimePay;
+            $rateBreakdown[$key]['special_overtime_rate_total'] += $dtrSpecialOvertimePay;
+            $rateBreakdown[$key]['regular_holiday_overtime_rate_total'] += $dtrRegularHolidayOvertimePay;
+            $rateBreakdown[$key]['night_diff_rate_total'] += $dtrNightDiffPay;
             $rateBreakdown[$key]['holiday_pay'] +=
                 $dtr->is_holiday ? $holidayAmount : 0;
             $rateBreakdown[$key]['sp_holiday_pay'] +=
@@ -280,6 +302,16 @@ class PayrollCalculationService
             + $nightDiffPay
             + $holidayPay
             + $spHolidayPay;
+
+        // Effective item rates are weighted averages, preserving mixed day classifications.
+        foreach ($rateBreakdown as &$rateRow) {
+            $rateRow['regular_overtime_rate'] = $rateRow['overtime_hours'] > 0 ? $rateRow['regular_overtime_rate_total'] / $rateRow['overtime_hours'] : 0;
+            $rateRow['special_overtime_rate'] = $rateRow['special_overtime_hours'] > 0 ? $rateRow['special_overtime_rate_total'] / $rateRow['special_overtime_hours'] : 0;
+            $rateRow['regular_holiday_overtime_rate'] = $rateRow['regular_holiday_overtime_hours'] > 0 ? $rateRow['regular_holiday_overtime_rate_total'] / $rateRow['regular_holiday_overtime_hours'] : 0;
+            $rateRow['night_diff_rate'] = $rateRow['night_diff_hours'] > 0 ? $rateRow['night_diff_rate_total'] / $rateRow['night_diff_hours'] : 0;
+            unset($rateRow['regular_overtime_rate_total'], $rateRow['special_overtime_rate_total'], $rateRow['regular_holiday_overtime_rate_total'], $rateRow['night_diff_rate_total']);
+        }
+        unset($rateRow);
 
         // Round the breakdown before returning it.
         foreach ($rateBreakdown as &$breakdown) {
@@ -305,6 +337,8 @@ class PayrollCalculationService
                          'sp_holiday_pay',
                          'late_deduction',
                          'undertime_deduction',
+                         'regular_overtime_rate', 'special_overtime_rate',
+                         'regular_holiday_overtime_rate', 'night_diff_rate',
                      ] as $field) {
                 $breakdown[$field] = round($breakdown[$field], 2);
             }

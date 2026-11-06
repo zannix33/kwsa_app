@@ -96,6 +96,9 @@ class BillingGuardDetailService
                     'area_name' => $area->name,
                     'client_id' => $area->client_id,
                     'client_name' => optional($area->client)->name,
+                    'apply_overtime_rate' => $area->client ? (bool) $area->client->apply_overtime_rate : true,
+                    'apply_night_diff_rate' => $area->client ? (bool) $area->client->apply_night_diff_rate : true,
+                    'premium_combination_method' => $area->client->premium_combination_method ?? 'billing_formula',
                     'region_id' => $area->region_id,
                     'branches' => [],
                 ];

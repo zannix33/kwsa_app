@@ -87,6 +87,25 @@
                                 </select>
                             </div>
 
+
+                    <hr>
+                    <h5>Overtime & Night Differential Premiums</h5>
+                    <p class="text-muted">Disabling a premium does not remove recorded DTR hours. Hours remain payable at the base rate.</p>
+                    <div class="form-group">
+                        <label for="apply_overtime_rate">Apply Overtime Premium</label>
+                        <select class="form-control" id="apply_overtime_rate" name="apply_overtime_rate" required>
+                            <option value="1" {{ old('apply_overtime_rate', '1') == '1' ? 'selected' : '' }}>Enabled</option>
+                            <option value="0" {{ old('apply_overtime_rate', '1') == '0' ? 'selected' : '' }}>Disabled — base hourly rate</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="apply_night_diff_rate">Apply Night Differential Premium</label>
+                        <select class="form-control" id="apply_night_diff_rate" name="apply_night_diff_rate" required>
+                            <option value="1" {{ old('apply_night_diff_rate', '1') == '1' ? 'selected' : '' }}>Enabled</option>
+                            <option value="0" {{ old('apply_night_diff_rate', '1') == '0' ? 'selected' : '' }}>Disabled — no additional ND premium</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="premium_combination_method" value="billing_formula">
                             <div class="text-right">
                                 <a href="{{ route('clients.index') }}" class="btn btn-secondary">
                                     Cancel
