@@ -46,6 +46,7 @@
 
                 <tr>
 
+                    <th width="36" class="text-center">&nbsp;</th>
                     <th>Date</th>
                     <th>Day</th>
 
@@ -81,11 +82,21 @@
 
                 </thead>
 
-                <tbody>
+                <tbody id="dtrRows">
 
                 @foreach($period as $date)
 
                     <tr>
+
+                        <td class="text-center align-middle">
+                            <button type="button"
+                                    class="btn btn-link text-danger p-0 removeRow"
+                                    title="Remove this date"
+                                    aria-label="Remove this date"
+                                    style="font-size: 22px; line-height: 1; text-decoration: none;">
+                                &times;
+                            </button>
+                        </td>
 
                         <td>
 

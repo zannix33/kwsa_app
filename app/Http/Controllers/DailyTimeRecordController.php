@@ -53,13 +53,10 @@ class DailyTimeRecordController extends Controller
             $request->to_date
         );
 
-        $user = User::with([
-            'areas.branches'
-        ])->findOrFail($request->user_id);
+        $user = User::findOrFail($request->user_id);
 
-        $areas = Area::with([
-                'branches'
-            ])->get();
+        // Only expose areas and branches explicitly assigned to this guard.
+        $areas = $this->getAssignedAreasWithBranches($user);
 
         //$payrollPeriod = PayrollPeriod::findOrFail(
         //    $period->id
@@ -108,20 +105,38 @@ class DailyTimeRecordController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'records'     => 'required|array'
+            'records' => 'required|array',
+        ]);
+
+        // Ignore untouched/absent dates before validating assignment fields.
+        // These rows are intentionally not submitted as DTR records.
+        $records = collect($request->input('records', []))
+            ->filter(function ($record) {
+                return !empty($record['time_in']) || !empty($record['time_out']);
+            })
+            ->all();
+
+        if (empty($records)) {
+            return redirect()
+                ->route('dtr.bulk.create')
+                ->with('warning', 'No DTR records were saved because no attendance times were entered.');
+        }
+
+        $request->merge(['records' => $records]);
+        $request->validate([
+            'records.*.work_date' => 'required|date',
+            'records.*.area_id' => 'required|exists:areas,id',
+            'records.*.branch_id' => 'nullable|exists:branches,id',
+            'records.*.operation_start' => 'required|date_format:H:i',
+            'records.*.operation_end' => 'required|date_format:H:i',
+            'records.*.time_in' => 'required|date_format:H:i',
+            'records.*.time_out' => 'required|date_format:H:i',
+            'records.*.break_minutes' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request) {
 
             foreach ($request->records as $record) {
-
-                if (
-                    empty($record['time_in']) &&
-                    empty($record['time_out'])
-                ) {
-                    continue;
-                }
-
                 $calculated =
                     $this->calculateDtr($record);
 
@@ -130,7 +145,7 @@ class DailyTimeRecordController extends Controller
                         'user_id' => $request->user_id,
                         'work_date'   => $record['work_date'],
                         'area_id'=>$record['area_id'],
-                        'branch_id'=>$record['branch_id'],
+                        'branch_id' => $record['branch_id'] ?? null,
                     ],
                     [
                         'operation_start' =>
@@ -180,6 +195,12 @@ class DailyTimeRecordController extends Controller
 
                         'remarks' =>
                             $record['remarks'] ?? null,
+
+                        'special_holiday' =>
+                            isset($record['special_holiday']),
+
+                        'is_extended_hours' =>
+                            isset($record['is_extended_hours']),
                     ]
                 );
             }
@@ -471,12 +492,40 @@ class DailyTimeRecordController extends Controller
 
     public function assignments(User $employee)
     {
-        $employee->load([
-            'areas.branches'
-        ]);
-
         return response()->json([
-            'areas' => $employee->areas
+            'areas' => $this->getAssignedAreasWithBranches($employee),
         ]);
+    }
+
+    /**
+     * Return only the employee's assigned areas and assigned branches.
+     * Branch assignments are stored separately from area assignments, so
+     * loading Area::branches directly would expose unassigned branches.
+     */
+    private function getAssignedAreasWithBranches(User $employee)
+    {
+        // Branches are assigned through branch_user independently of area_user.
+        // Include the parent areas of assigned branches even when the guard was
+        // not separately added to the area's user assignment list.
+        $assignedBranches = $employee->branches()->get();
+        $branchesByArea = $assignedBranches->groupBy('area_id');
+
+        $assignedAreaIds = $employee->areas()->pluck('areas.id');
+        $branchAreaIds = $assignedBranches->pluck('area_id')->filter();
+        $areaIds = $assignedAreaIds->merge($branchAreaIds)->unique()->values();
+
+        if ($areaIds->isEmpty()) {
+            return collect();
+        }
+
+        return Area::whereIn('id', $areaIds)->orderBy('name')->get()
+            ->map(function ($area) use ($branchesByArea) {
+                $area->setRelation(
+                    'branches',
+                    $branchesByArea->get($area->id, collect())->values()
+                );
+
+                return $area;
+            })->values();
     }
 }

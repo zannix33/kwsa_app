@@ -22,6 +22,12 @@
                     </div>
                 @endif
 
+                @if(session('warning'))
+                    <div class="alert alert-warning">
+                        {{ session('warning') }}
+                    </div>
+                @endif
+
                 <form method="POST"
                       action="{{ route('dtr.bulk.generate') }}">
 

@@ -491,9 +491,24 @@
                         'default_break'
                     ).value;
 
+                let defaultArea = document.getElementById('default_area').value;
+                let defaultBranch = document.getElementById('default_branch').value;
+
                 document
                     .querySelectorAll('tbody tr')
                     .forEach(function(row){
+
+                        let areaSelect = row.querySelector('.area-select');
+                        let branchSelect = row.querySelector('.branch-select');
+
+                        if (areaSelect) {
+                            areaSelect.value = defaultArea;
+                            areaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        if (branchSelect) {
+                            branchSelect.value = defaultBranch;
+                        }
 
                         row.querySelector('.operation_start').value =
                             operationStart;
@@ -579,215 +594,42 @@
         calculateTotals();
 
         document.getElementById('addRow').addEventListener('click', function () {
-
-            let tbody = document.getElementById('dtrTableBody');
-
-            let index = parseInt(document.getElementById('rowIndex').value);
-
-            let row = `
-                    <tr>
-
-                    <td>
-
-                    <input
-                    type="date"
-                    class="form-control work_date"
-                    name="records[${index}][work_date]">
-
-                    </td>
-
-                    <td class="day_name"></td>
-
-                    <td>
-                    <input
-                    type="time"
-                    class="form-control military-time operation_start"
-                    name="records[${index}][operation_start]">
-                    </td>
-
-                    <td>
-                    <input
-                    type="time"
-                    class="form-control military-time operation_end"
-                    name="records[${index}][operation_end]">
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="number"
-                    class="form-control break_minutes"
-                    name="records[${index}][break_minutes]"
-                    value="60">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    class="form-control scheduled_hours"
-                    readonly>
-
-                    <input
-                    type="hidden"
-                    class="scheduled_hours_hidden"
-                    name="records[${index}][scheduled_hours]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="time"
-                    class="form-control military-time time_in"
-                    name="records[${index}][time_in]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="time"
-                    class="form-control military-time time_out"
-                    name="records[${index}][time_out]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    readonly
-                    class="form-control regular_hours">
-
-                    <input
-                    type="hidden"
-                    class="regular_hours_hidden"
-                    name="records[${index}][regular_hours]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    readonly
-                    class="form-control overtime_hours">
-
-                    <input
-                    type="hidden"
-                    class="overtime_hours_hidden"
-                    name="records[${index}][overtime_hours]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    readonly
-                    class="form-control nd_hours">
-
-                    <input
-                    type="hidden"
-                    class="nd_hours_hidden"
-                    name="records[${index}][night_differential_hours]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    readonly
-                    class="form-control late_hours">
-
-                    <input
-                    type="hidden"
-                    class="late_hours_hidden"
-                    name="records[${index}][late_hours]">
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    readonly
-                    class="form-control undertime_hours">
-
-                    <input
-                    type="hidden"
-                    class="undertime_hours_hidden"
-                    name="records[${index}][undertime_hours]">
-
-                    </td>
-
-                    <td class="text-center">
-
-                    <input
-                    type="checkbox"
-                    class="rest_day"
-                    name="records[${index}][is_rest_day]">
-
-                    </td>
-
-                    <td class="text-center">
-
-                    <input
-                    type="checkbox"
-                    class="holiday"
-                    name="records[${index}][is_holiday]">
-
-                    </td>
-
-                    <td class="text-center">
-
-                    <input
-                    type="checkbox"
-                    class="special_holiday"
-                    name="records[${index}][special_holiday]">
-
-                    </td>
-
-                    <td class="text-center">
-
-                    <input
-                    type="checkbox"
-                    class="extended_hours"
-                    name="records[${index}][is_extended_hours]" checked>
-
-                    </td>
-
-                    <td>
-
-                    <input
-                    type="text"
-                    class="form-control"
-                    name="records[${index}][remarks]">
-
-                    </td>
-
-                    <td class="text-center">
-
-                    <button
-                    type="button"
-                    class="btn btn-danger btn-sm removeRow">
-
-                    <i class="fa fa-trash"></i>
-
-                    </button>
-
-                    </td>
-
-                    </tr>
-                    `;
-
-            tbody.insertAdjacentHTML('beforeend', row);
-
-            document.getElementById('rowIndex').value = index + 1;
-
+            const tbody = document.getElementById('dtrRows');
+            const indexInput = document.getElementById('rowIndex');
+            const index = parseInt(indexInput.value, 10) || 0;
+            const template = tbody.querySelector('tr');
+
+            if (!template) return;
+
+            const row = template.cloneNode(true);
+
+            row.querySelectorAll('[name]').forEach(function (field) {
+                field.name = field.name.replace(/records\[\d+\]/, 'records[' + index + ']');
+            });
+
+            row.querySelector('td:first-child').innerHTML =
+                '<input type="date" class="form-control work_date" name="records[' + index + '][work_date]">';
+            row.querySelector('td:nth-child(2)').textContent = '';
+
+            row.querySelectorAll('input').forEach(function (field) {
+                if (field.type === 'checkbox') {
+                    field.checked = false;
+                } else if (field.classList.contains('break_minutes')) {
+                    field.value = '60';
+                } else {
+                    field.value = '';
+                }
+            });
+
+            row.querySelectorAll('select').forEach(function (field) {
+                field.selectedIndex = 0;
+            });
+
+            const branch = row.querySelector('.branch-select');
+            branch.innerHTML = '<option value="">No Branch</option>';
+
+            tbody.appendChild(row);
+            indexInput.value = index + 1;
         });
 
         document.addEventListener('change', function (e) {
@@ -816,11 +658,8 @@
             let button = e.target.closest('.removeRow');
 
             if (button) {
-
                 button.closest('tr').remove();
-
                 calculateTotals();
-
             }
 
         });

@@ -9,6 +9,23 @@
         <div class="row">
 
             <div class="col-md-2">
+                <label>Default Area</label>
+                <select id="default_area" class="form-control">
+                    <option value="">Select Area</option>
+                    @foreach($areas as $area)
+                        <option value="{{ $area->id }}">{{ $area->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label>Default Branch</label>
+                <select id="default_branch" class="form-control">
+                    <option value="">No Branch</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
 
                 <label>Operation Start</label>
 
@@ -79,6 +96,8 @@
             </div>
 
         </div>
+
+        <small class="form-text text-muted mt-2">Area and Branch, along with the schedule and attendance defaults, will be applied to every remaining row when you click Apply To All.</small>
 
     </div>
 

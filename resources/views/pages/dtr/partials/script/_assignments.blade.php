@@ -223,6 +223,30 @@
 
         $('#default_branch').html(html);
 
+        // Automatically choose a branch when this area has exactly one.
+        if (area && area.branches.length === 1) {
+            $('#default_branch').val(area.branches[0].id);
+        }
+
+    });
+
+    // Initialize defaults from the guard's assignments.
+    $(function () {
+        if (employeeAreas.length === 1) {
+            let onlyArea = employeeAreas[0];
+            $('#default_area').val(onlyArea.id).trigger('change');
+
+            if (onlyArea.branches.length === 1) {
+                $('#default_branch').val(onlyArea.branches[0].id);
+            }
+
+            $('.area-select').each(function () {
+                $(this).val(onlyArea.id).trigger('change');
+                if (onlyArea.branches.length === 1) {
+                    $(this).closest('tr').find('.branch-select').val(onlyArea.branches[0].id);
+                }
+            });
+        }
     });
 
 </script>
