@@ -14,6 +14,7 @@ class PositionSeeder extends Seeder
             'Accounting',
             'Security Officer',
             'Security Guard',
+            'Roving Guard',
             'Head Operation',
             'Officer',
             'Admin Compliance',

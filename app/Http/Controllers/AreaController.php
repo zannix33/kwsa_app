@@ -135,12 +135,17 @@ class AreaController extends Controller
     public function assignGuard(Request $request)
     {
         $validated = $request->validate([
-
             'area_id' => 'required|exists:areas,id',
-
             'user_id' => 'required|exists:users,id',
-
         ]);
+
+        $guard = \App\Models\User::with('position')->findOrFail($validated['user_id']);
+        if (!$guard->position || !in_array($guard->position->name, ['Security Guard', 'Security Officer', 'Roving Guard'], true)) {
+            return response()->json([
+                'message' => 'Only Security Guard, Security Officer, and Roving Guard employees can be assigned.',
+                'errors' => ['user_id' => ['Select an employee with an eligible security position.']],
+            ], 422);
+        }
 
         $area = Area::findOrFail($validated['area_id']);
 
@@ -165,12 +170,17 @@ class AreaController extends Controller
     public function removeGuard(Request $request)
     {
         $validated = $request->validate([
-
             'area_id' => 'required|exists:areas,id',
-
             'user_id' => 'required|exists:users,id',
-
         ]);
+
+        $guard = \App\Models\User::with('position')->findOrFail($validated['user_id']);
+        if (!$guard->position || !in_array($guard->position->name, ['Security Guard', 'Security Officer', 'Roving Guard'], true)) {
+            return response()->json([
+                'message' => 'Only Security Guard, Security Officer, and Roving Guard employees can be assigned.',
+                'errors' => ['user_id' => ['Select an employee with an eligible security position.']],
+            ], 422);
+        }
 
         $area = Area::findOrFail($validated['area_id']);
 
@@ -196,7 +206,9 @@ class AreaController extends Controller
 
             \App\Models\User::with('position')
                 ->whereNotIn('id', $assigned)
-                ->where('employee_type', 'Operations')
+                ->whereHas('position', function ($query) {
+                    $query->whereIn('name', ['Security Guard', 'Security Officer', 'Roving Guard']);
+                })
                 ->orderBy('name')
                 ->get([
                     'id',

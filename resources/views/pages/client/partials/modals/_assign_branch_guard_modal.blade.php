@@ -61,6 +61,7 @@
                                     {{ $guard->employee_no }}
                                     -
                                     {{ $guard->name }}
+                                    ({{ optional($guard->position)->name }})
 
                                 </option>
 
