@@ -10,6 +10,8 @@ class ArmMaintenance extends Model
 
         'arm_id',
 
+        'maintenance_no',
+
         'maintenance_date',
 
         'maintenance_type',
@@ -74,6 +76,13 @@ class ArmMaintenance extends Model
     protected static function booted()
     {
         static::creating(function ($maintenance) {
+
+            if (empty($maintenance->maintenance_no)) {
+                do {
+                    $number = 'MNT-' . now()->format('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(5));
+                } while (static::where('maintenance_no', $number)->exists());
+                $maintenance->maintenance_no = $number;
+            }
 
             // Automatically compute total cost
             $maintenance->total_cost =

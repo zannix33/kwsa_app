@@ -20,7 +20,7 @@ class ArmController extends Controller
     public function index()
     {
         $branches = Branch::all();
-        return view('pages.arms.arms.index', compact('branches'));
+        return view('arms.arms.index', ['branches' => $branches, 'stats' => $this->service->dashboard()]);
     }
 
     public function datatable(Request $request)
@@ -30,7 +30,7 @@ class ArmController extends Controller
 
     public function create()
     {
-        return view('pages.arms.arms.create',[
+        return view('arms.arms.create',[
             'branches'=>Branch::orderBy('name')->get()
         ]);
     }
@@ -56,19 +56,19 @@ class ArmController extends Controller
 
         $arm->load([
             'branch',
-            'activeAssignment.user',
+            'currentAssignment.user',
             'assignments.user',
             'maintenances',
             'inspections',
             'licenses'
         ]);
 
-        return view('pages.arms.arms.show',compact('arm'));
+        return view('arms.arms.show', compact('arm'));
     }
 
     public function edit(Arm $arm)
     {
-        return view('pages.arms.arms.edit',[
+        return view('arms.arms.edit',[
 
             'arm'=>$arm,
 

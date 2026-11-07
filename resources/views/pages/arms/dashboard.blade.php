@@ -184,7 +184,7 @@
 
                                     <td>
 
-                                        {{ $ammo->quantity_on_hand }}
+                                        {{ $ammo->quantity }}
 
                                     </td>
 

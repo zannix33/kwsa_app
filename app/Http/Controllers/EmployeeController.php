@@ -55,6 +55,10 @@ class EmployeeController extends Controller
                     return optional($row->position)->name;
                 })
 
+                ->addColumn('employment_status', function ($row) {
+                    return $row->employment_status ?: 'Employed';
+                })
+
                 ->addColumn('photo', function ($row) {
 
                     if ($row->photo) {
@@ -205,6 +209,7 @@ class EmployeeController extends Controller
             ],
 
             'date_hired' => 'nullable|date',
+            'employment_status' => 'required|in:Employed,Temporary,Resigned,Terminated',
             'dt_date' => 'nullable|date',
             'department_type' => 'required|in:Admin,Operations',
             'position_id'      => 'required|exists:positions,id',
@@ -317,6 +322,7 @@ class EmployeeController extends Controller
             'lesp_expiry' => 'nullable|date',
 
             'date_hired' => 'nullable|date',
+            'employment_status' => 'required|in:Employed,Temporary,Resigned,Terminated',
             'dt_date' => 'nullable|date',
 
             'password' => 'nullable|min:8',

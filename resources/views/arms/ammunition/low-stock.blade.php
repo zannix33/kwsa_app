@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Low Stock') @section('content')<div class="container-fluid"><h3>Low Stock</h3><p>Review the inventory list and use the stock actions to reconcile quantities.</p><a href="{{ route('arms.ammunition.index') }}" class="btn btn-secondary">Back to Ammunition</a></div>@endsection

@@ -44,7 +44,7 @@ class ArmDashboardController extends Controller
      */
     public function index()
     {
-        return view('arms.dashboard', [
+        return view('pages.arms.dashboard', [
 
             'firearms' => $this->armService->dashboard(),
 

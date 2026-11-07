@@ -260,34 +260,18 @@ Route::group(['middleware' => ['auth']], function () {
                 ->name('store');
 
             Route::get('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'show'])
-                ->name('show');
+                ->whereNumber('arm')->name('show');
 
             Route::get('/{arm}/edit', [\App\Http\Controllers\Arms\ArmController::class,'edit'])
-                ->name('edit');
+                ->whereNumber('arm')->name('edit');
 
             Route::put('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'update'])
-                ->name('update');
+                ->whereNumber('arm')->name('update');
 
             Route::delete('/{arm}', [\App\Http\Controllers\Arms\ArmController::class,'destroy'])
-                ->name('destroy');
+                ->whereNumber('arm')->name('destroy');
 
-            Route::post('/{arm}/retire', [\App\Http\Controllers\Arms\ArmController::class,'retire'])
-                ->name('retire');
-
-            Route::post('/{arm}/lost', [\App\Http\Controllers\Arms\ArmController::class,'lost'])
-                ->name('lost');
-
-            Route::post('/{arm}/available', [\App\Http\Controllers\Arms\ArmController::class,'available'])
-                ->name('available');
-
-        });
-
-    // Arms Assignment
-
-    Route::prefix('arms/assignments')
-        ->name('arms.assignments.')
-        ->group(function () {
-
+            // Arms dashboard belongs to the main /arms section, not assignments.
             Route::get('/dashboard', [ArmDashboardController::class, 'index'])
                 ->name('dashboard');
 
@@ -297,6 +281,22 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/dashboard/summary', [ArmDashboardController::class, 'summary'])
                 ->name('dashboard.summary');
 
+            Route::post('/{arm}/retire', [\App\Http\Controllers\Arms\ArmController::class,'retire'])
+                ->whereNumber('arm')->name('retire');
+
+            Route::post('/{arm}/lost', [\App\Http\Controllers\Arms\ArmController::class,'lost'])
+                ->whereNumber('arm')->name('lost');
+
+            Route::post('/{arm}/available', [\App\Http\Controllers\Arms\ArmController::class,'available'])
+                ->whereNumber('arm')->name('available');
+
+        });
+
+    // Arms Assignment
+
+    Route::prefix('arms/assignments')
+        ->name('arms.assignments.')
+        ->group(function () {
 
             Route::get('/', [ArmAssignmentController::class, 'index'])->name('index');
 

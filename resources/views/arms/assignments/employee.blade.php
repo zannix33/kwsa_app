@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Employee Firearm History') @section('content')<div class="container-fluid"><h3>Employee Firearm History</h3><a class="btn btn-secondary" href="{{ route('arms.assignments.index') }}">Back to Assignments</a></div>@endsection

@@ -98,9 +98,9 @@ class ArmAssignmentService
 
                 'user_id' => $data['user_id'],
 
-                'branch_id' => $data['branch_id'],
+                'branch_id' => $data['branch_id'] ?? null,
 
-                'issued_at' => now(),
+                'issued_at' => $data['issued_at'],
 
                 'issued_by' => auth()->user()->name,
 
@@ -108,7 +108,7 @@ class ArmAssignmentService
 
                 'condition_before' => $data['condition_before'],
 
-                'ammo_issued' => $data['ammo_issued'],
+                'ammo_issued' => $data['ammo_issued'] ?? 0,
 
                 'remarks' => $data['remarks'] ?? null,
 
@@ -219,11 +219,13 @@ class ArmAssignmentService
                     'exists:branches,id'
                 ],
 
+                'issued_at' => ['required', 'date'],
+
                 'reference_no' => 'nullable|max:100',
 
-                'condition_before' => 'required',
+                'condition_before' => 'required|in:Excellent,Good,Fair,Needs Repair',
 
-                'ammo_issued' => 'required|integer|min:0',
+                'ammo_issued' => 'nullable|integer|min:0',
 
                 'remarks' => 'nullable'
 

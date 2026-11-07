@@ -106,6 +106,7 @@
                 <th>Full Name</th>
                 <th>Email</th>
                 <th>Position</th>
+                <th>Employment Status</th>
                 <th>Age</th>
                 <th>Phone</th>
                 <th>Action</th>
@@ -163,6 +164,8 @@
                     {data:'email'},
 
                     {data:'position'},
+
+                    {data:'employment_status'},
 
                     {data:'age'},
 

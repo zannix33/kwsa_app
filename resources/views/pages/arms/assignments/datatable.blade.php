@@ -48,8 +48,8 @@
                 },
 
                 {
-                    data: 'assigned_at',
-                    name: 'assigned_at'
+                    data: 'issued_at',
+                    name: 'issued_at'
                 },
 
                 {

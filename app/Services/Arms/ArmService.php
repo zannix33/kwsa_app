@@ -4,212 +4,141 @@ namespace App\Services\Arms;
 
 use App\Models\Arm;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 
 class ArmService
 {
-    /**
-     * DataTable
-     */
     public function datatable(Request $request)
     {
-        $query = Arm::with([
-            'branch',
-            'currentAssignment.user',
-            'activeLicense',
-            'latestInspection'
-        ]);
+        $query = Arm::with(['branch', 'currentAssignment.user']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status', $request->input('status'));
         }
-
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+        $branch = $request->input('branch_id', $request->input('branch'));
+        if ($branch) {
+            $query->where('branch_id', $branch);
         }
-
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
         if ($request->filled('caliber')) {
-            $query->where('caliber', $request->caliber);
+            $query->where('caliber', 'like', '%' . $request->input('caliber') . '%');
+        }
+        $manufacturer = $request->input('manufacturer', $request->input('make'));
+        if ($manufacturer) {
+            $query->where('manufacturer', 'like', '%' . $manufacturer . '%');
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
         }
 
         return DataTables::eloquent($query)
-
-            ->addColumn('photo', function ($arm) {
-
+            ->addColumn('photo', function (Arm $arm) {
                 if ($arm->photo && Storage::disk('public')->exists($arm->photo)) {
-                    return '<img src="'.asset('storage/'.$arm->photo).'" width="60" class="img-thumbnail">';
+                    return '<img src="' . e(Storage::disk('public')->url($arm->photo)) . '" width="58" height="58" style="object-fit:cover" class="img-thumbnail" alt="Firearm photo">';
                 }
-
                 return '<span class="text-muted">No Photo</span>';
             })
-
-            ->rawColumns(['photo'])
-
-            ->addColumn('branch', function ($arm) {
-                return optional($arm->branch)->name;
+            ->addColumn('branch', function (Arm $arm) {
+                return optional($arm->branch)->name ?: '-';
             })
-
-            ->addColumn('holder', function ($arm) {
-                return optional($arm->currentHolder)->name ?? '-';
+            ->addColumn('status_badge', function (Arm $arm) {
+                return $arm->status_badge;
             })
-
-            /*->addColumn('license', function ($arm) {
-                return optional($arm->activeLicense)->license_number;
+            ->addColumn('assigned_to', function (Arm $arm) {
+                return optional(optional($arm->currentAssignment)->user)->name ?: '—';
             })
-
-            ->addColumn('license_expiry', function ($arm) {
-                return optional($arm->activeLicense?->expiry_date)
-                    ? $arm->activeLicense->expiry_date->format('M d, Y')
-                    : '-';
-            })*/
-
-            //->addColumn('actions', function ($arm) {
-            //    return view('pages.arms.datatables.actions', compact('arm'));
-            //})
-
-            ->rawColumns(['actions'])
-
+            ->addColumn('actions', function (Arm $arm) {
+                $view = route('arms.show', $arm);
+                $edit = route('arms.edit', $arm);
+                return '<a class="btn btn-sm btn-info" href="' . e($view) . '">View</a> '
+                    . '<a class="btn btn-sm btn-primary" href="' . e($edit) . '">Edit</a>';
+            })
+            ->rawColumns(['photo', 'status_badge', 'actions'])
             ->make(true);
     }
 
-    /**
-     * Store
-     */
     public function store(Request $request)
     {
         $data = $this->validate($request);
-
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('arms', 'public');
+        }
         return Arm::create($data);
     }
 
-    /**
-     * Update
-     */
     public function update(Arm $arm, Request $request)
     {
         $data = $this->validate($request, $arm->id);
-
+        if ($request->hasFile('photo')) {
+            if ($arm->photo) {
+                Storage::disk('public')->delete($arm->photo);
+            }
+            $data['photo'] = $request->file('photo')->store('arms', 'public');
+        }
         $arm->update($data);
-
-        return $arm;
+        return $arm->fresh();
     }
 
-    /**
-     * Delete
-     */
     public function destroy(Arm $arm)
     {
         if ($arm->currentAssignment()->exists()) {
-            abort(422, 'Firearm is currently issued.');
+            abort(422, 'Firearm is currently issued. Return it before deleting the record.');
         }
-
+        if ($arm->photo) {
+            Storage::disk('public')->delete($arm->photo);
+        }
         $arm->delete();
     }
 
-    /**
-     * Bulk retire
-     */
     public function bulkRetire(array $ids)
     {
-        Arm::whereIn('id', $ids)
-            ->update([
-                'status' => 'Retired'
-            ]);
+        Arm::whereIn('id', $ids)->update(['status' => 'Retired']);
     }
 
-    /**
-     * Bulk mark available
-     */
     public function bulkAvailable(array $ids)
     {
-        Arm::whereIn('id', $ids)
-            ->update([
-                'status' => 'Available'
-            ]);
+        Arm::whereIn('id', $ids)->whereDoesntHave('currentAssignment')->update(['status' => 'Available']);
     }
 
-    /**
-     * Bulk transfer
-     */
     public function bulkTransfer(array $ids, $branchId)
     {
-        Arm::whereIn('id', $ids)
-            ->update([
-                'branch_id' => $branchId
-            ]);
+        Arm::whereIn('id', $ids)->update(['branch_id' => $branchId]);
     }
 
-    /**
-     * Dashboard
-     */
     public function dashboard()
     {
         return [
-
             'total' => Arm::count(),
-
             'available' => Arm::available()->count(),
-
             'issued' => Arm::issued()->count(),
-
             'maintenance' => Arm::maintenance()->count(),
-
             'lost' => Arm::lost()->count(),
-
             'retired' => Arm::retired()->count(),
-
         ];
     }
 
-    /**
-     * Validation
-     */
     protected function validate(Request $request, $id = null)
     {
-        return Validator::make(
-            $request->all(),
-            [
+        if (in_array($request->input('type'), ['Pistol', 'Revolver'], true)) {
+            $request->merge(['type' => 'Handgun']);
+        }
 
-                'property_no' => [
-                    'required',
-                    'max:255',
-                    'unique:arms,property_no,' . $id
-                ],
-
-                'serial_no' => [
-                    'required',
-                    'max:255',
-                    'unique:arms,serial_no,' . $id
-                ],
-
-                'model' => 'required|max:255',
-
-                'caliber' => 'required|max:255',
-
-                'type' => 'required',
-
-                'color' => 'nullable|max:255',
-
-                'purchase_date' => 'nullable|date',
-
-                'purchase_cost' => 'nullable|numeric|min:0',
-
-                'supplier' => 'nullable|max:255',
-
-                'manufacturer' => 'nullable|max:255',
-
-                'branch_id' => 'nullable|exists:branches,id',
-
-                'status' => 'required',
-
-                'remarks' => 'nullable'
-
-            ]
-        )->validate();
+        return Validator::make($request->all(), [
+            'property_no' => 'required|string|max:255|unique:arms,property_no,' . $id,
+            'serial_no' => 'required|string|max:255|unique:arms,serial_no,' . $id,
+            'model' => 'required|string|max:255',
+            'caliber' => 'required|string|max:255',
+            'type' => 'required|in:Handgun,Shotgun,Rifle,SMG,Others',
+            'manufacturer' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:255',
+            'purchase_date' => 'nullable|date',
+            'purchase_cost' => 'nullable|numeric|min:0',
+            'supplier' => 'nullable|string|max:255',
+            'branch_id' => 'nullable|exists:branches,id',
+            'status' => 'required|in:Available,Issued,Maintenance,Lost,Retired',
+            'remarks' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ])->validate();
     }
 }

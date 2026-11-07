@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Firearm License History') @section('content')<div class="container-fluid"><h3>Licenses — {{ $arm->property_no }}</h3>@foreach($arm->licenses as $license)<p>{{ $license->license_number }} — {{ $license->expiry_date }} — {{ $license->status }}</p>@endforeach</div>@endsection

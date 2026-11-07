@@ -135,12 +135,12 @@ class Arm extends Model
 
     public function getDescriptionAttribute()
     {
-        return "{$this->make} {$this->model}";
+        return "{$this->manufacturer} {$this->model}";
     }
 
     public function getFullNameAttribute()
     {
-        return "{$this->make} {$this->model} ({$this->serial_no})";
+        return "{$this->manufacturer} {$this->model} ({$this->serial_no})";
     }
 
     public function getCurrentHolderAttribute()

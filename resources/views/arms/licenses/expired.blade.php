@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Expired Licenses') @section('content')<div class="container-fluid"><h3>Expired Licenses</h3><p>Use the module list to review and manage records in this category.</p><a class="btn btn-secondary" href="{{ route('arms.licenses.index') }}">Back to Licenses</a></div>@endsection

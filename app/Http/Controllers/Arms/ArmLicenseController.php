@@ -10,196 +10,58 @@ use Illuminate\Http\Request;
 
 class ArmLicenseController extends Controller
 {
-    protected ArmLicenseService $service;
+    protected $service;
 
-    public function __construct(ArmLicenseService $service)
-    {
-        $this->service = $service;
-    }
+    public function __construct(ArmLicenseService $service) { $this->service = $service; }
 
-    /**
-     * License History
-     */
     public function index()
     {
-        return view('arms.licenses.index');
+        return view('arms.licenses.index', ['summary' => $this->service->dashboard()]);
     }
 
-    /**
-     * DataTable
-     */
-    public function datatable(Request $request)
-    {
-        return $this->service->datatable($request);
-    }
+    public function datatable(Request $request) { return $this->service->datatable($request); }
 
-    /**
-     * Create License
-     */
     public function create()
     {
-        return view('pages.arms.licenses.create', [
-
-            'arms' => Arm::orderBy('property_no')->get()
-
-        ]);
+        return view('arms.licenses.create', ['arms' => Arm::orderBy('property_no')->get()]);
     }
 
-    /**
-     * Store License
-     */
     public function store(Request $request)
     {
         $license = $this->service->store($request);
-
-        return redirect()
-
-            ->route('arms.licenses.show', $license)
-
-            ->with(
-                'success',
-                'License successfully created.'
-            );
+        return redirect()->route('arms.licenses.index')->with('success', 'License successfully created.');
     }
 
-    /**
-     * View License
-     */
-    public function show(
-        ArmLicense $license
-    ) {
-
+    public function show(ArmLicense $license)
+    {
         $license->load('arm');
-
-        return view(
-            'arms.licenses.show',
-            compact('license')
-        );
-
+        return view('arms.licenses.show', compact('license'));
     }
 
-    /**
-     * Edit License
-     */
-    public function edit(
-        ArmLicense $license
-    ) {
-
-        return view(
-            'arms.licenses.edit',
-            [
-
-                'license' => $license,
-
-                'arms' => Arm::orderBy('property_no')->get()
-
-            ]
-        );
-
-    }
-
-    /**
-     * Update License
-     */
-    public function update(
-        Request $request,
-        ArmLicense $license
-    ) {
-
-        $this->service->update(
-            $license,
-            $request
-        );
-
-        return redirect()
-
-            ->route(
-                'arms.licenses.index'
-            )
-
-            ->with(
-                'success',
-                'License updated.'
-            );
-
-    }
-
-    /**
-     * Renew License
-     */
-    public function renew(
-        Request $request,
-        ArmLicense $license
-    ) {
-
-        $this->service->renew(
-            $license,
-            $request
-        );
-
-        return redirect()
-
-            ->route(
-                'arms.licenses.index'
-            )
-
-            ->with(
-                'success',
-                'License renewed successfully.'
-            );
-
-    }
-
-    /**
-     * Delete License
-     */
-    public function destroy(
-        ArmLicense $license
-    ) {
-
-        $this->service->destroy(
-            $license
-        );
-
-        return back()->with(
-            'success',
-            'License deleted.'
-        );
-
-    }
-
-    /**
-     * Expired Licenses
-     */
-    public function expired()
+    public function edit(ArmLicense $license)
     {
-        return view(
-            'arms.licenses.expired'
-        );
+        return view('arms.licenses.edit', ['license' => $license, 'arms' => Arm::orderBy('property_no')->get()]);
     }
 
-    /**
-     * Expiring Licenses
-     */
-    public function expiring()
+    public function update(Request $request, ArmLicense $license)
     {
-        return view(
-            'arms.licenses.expiring'
-        );
+        $this->service->update($license, $request);
+        return redirect()->route('arms.licenses.index')->with('success', 'License updated.');
     }
 
-    /**
-     * Firearm License History
-     */
-    public function firearm(
-        Arm $arm
-    ) {
-
-        return view(
-            'arms.licenses.firearm',
-            compact('arm')
-        );
-
+    public function renew(Request $request, ArmLicense $license)
+    {
+        $this->service->renew($license, $request);
+        return redirect()->route('arms.licenses.index')->with('success', 'License renewed successfully.');
     }
 
+    public function destroy(ArmLicense $license)
+    {
+        $this->service->destroy($license);
+        return back()->with('success', 'License deleted.');
+    }
+
+    public function expired() { return view('arms.licenses.expired'); }
+    public function expiring() { return view('arms.licenses.expiring'); }
+    public function firearm(Arm $arm) { return view('arms.licenses.firearm', compact('arm')); }
 }

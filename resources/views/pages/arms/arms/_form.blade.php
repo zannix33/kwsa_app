@@ -56,31 +56,25 @@
                         <label>Firearm Type</label>
 
                         <select name="type"
-                                class="form-control select2">
-
+                                class="form-control select2 @error('type') is-invalid @enderror"
+                                required>
                             <option value="">Select Type</option>
-
-                            <option value="Pistol"
-                                {{ old('type',$arm->type ?? '')=='Pistol'?'selected':'' }}>
-                                Pistol
-                            </option>
-
-                            <option value="Revolver"
-                                {{ old('type',$arm->type ?? '')=='Revolver'?'selected':'' }}>
-                                Revolver
-                            </option>
-
-                            <option value="Shotgun"
-                                {{ old('type',$arm->type ?? '')=='Shotgun'?'selected':'' }}>
-                                Shotgun
-                            </option>
-
-                            <option value="Rifle"
-                                {{ old('type',$arm->type ?? '')=='Rifle'?'selected':'' }}>
-                                Rifle
-                            </option>
-
+                            @foreach ([
+                                'Handgun' => 'Handgun (Pistol / Revolver)',
+                                'Shotgun' => 'Shotgun',
+                                'Rifle' => 'Rifle',
+                                'SMG' => 'Submachine Gun (SMG)',
+                                'Others' => 'Others',
+                            ] as $value => $label)
+                                <option value="{{ $value }}"
+                                    {{ old('type', $arm->type ?? '') === $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
                         </select>
+                        @error('type')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
 
                     </div>
 

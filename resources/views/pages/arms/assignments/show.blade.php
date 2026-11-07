@@ -1,6 +1,8 @@
-@extends('layouts.app')
+@extends('layout.master')
 
-@section('title','Assignment Details')
+@push('plugin-styles')
+    <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
+@endpush
 
 @section('content')
 
@@ -134,7 +136,7 @@
 
                             <td>
 
-                                {{ $assignment->assigned_at->format('F d, Y') }}
+                                {{ optional($assignment->assigned_at)->format('F d, Y') ?? '—' }}
 
                             </td>
 
@@ -150,7 +152,7 @@
 
                             <td>
 
-                                {{ optional($assignment->expected_return)->format('F d, Y') }}
+                                {{ optional($assignment->expected_return)->format('F d, Y') ?? '—' }}
 
                             </td>
 
@@ -216,7 +218,7 @@ Active
 
                                 <td>
 
-                                    {{ $assignment->returned_at->format('F d, Y') }}
+                                    {{ optional($assignment->returned_at)->format('F d, Y') ?? '—' }}
 
                                 </td>
 

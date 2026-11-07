@@ -117,14 +117,19 @@
                                 Firearm Registration
                             </option>
 
-                            <option value="Permit to Carry"
-                                {{ old('license_type', $license->license_type ?? '') == 'Permit to Carry' ? 'selected' : '' }}>
-                                Permit to Carry
+                            <option value="Authority to Carry"
+                                {{ old('license_type', $license->license_type ?? '') == 'Authority to Carry' ? 'selected' : '' }}>
+                                Authority to Carry
                             </option>
 
-                            <option value="Government Issued"
-                                {{ old('license_type', $license->license_type ?? '') == 'Government Issued' ? 'selected' : '' }}>
-                                Government Issued
+                            <option value="Permit to Transport"
+                                {{ old('license_type', $license->license_type ?? '') == 'Permit to Transport' ? 'selected' : '' }}>
+                                Permit to Transport
+                            </option>
+
+                            <option value="Other"
+                                {{ old('license_type', $license->license_type ?? '') == 'Other' ? 'selected' : '' }}>
+                                Other
                             </option>
 
                         </select>

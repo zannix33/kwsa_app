@@ -50,6 +50,10 @@
                                 <td>Department</td>
                                 <td>{{ $employee->department_type }}</td>
                             </tr>
+                            <tr>
+                                <th>Employment Status</th>
+                                <td>{{ $employee->employment_status ?? 'Employed' }}</td>
+                            </tr>
 
                             <tr>
                                 <th>Age</th>

@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Create Inspection') @section('content')<div class="container-fluid"><h3>Create Firearm Inspection</h3><form method="POST" action="{{ route('arms.inspections.store') }}">@csrf @include('arms.inspections._form')<button class="btn btn-primary">Save Inspection</button></form></div>@endsection

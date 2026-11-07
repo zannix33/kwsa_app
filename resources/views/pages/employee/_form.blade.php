@@ -260,6 +260,20 @@
                     </div>
 
                     <div class="form-group col-md-4">
+                        <label for="employment_status">Employment Status</label>
+                        <select name="employment_status" id="employment_status" class="form-control @error('employment_status') is-invalid @enderror" required>
+                            @foreach(['Employed', 'Temporary', 'Resigned', 'Terminated'] as $status)
+                                <option value="{{ $status }}" {{ old('employment_status', $employee->employment_status ?? 'Employed') === $status ? 'selected' : '' }}>
+                                    {{ $status }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('employment_status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-md-4">
                         <label>Date Hired</label>
                         <input type="date"
                                name="date_hired"

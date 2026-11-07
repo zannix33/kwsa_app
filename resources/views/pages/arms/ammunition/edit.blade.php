@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Edit Ammunition') @section('content')<div class="container-fluid"><h3>Edit Ammunition Stock</h3><form method="POST" action="{{ route('arms.ammunition.update',$ammunition) }}">@csrf @method('PUT')@include('arms.ammunition._form')<button class="btn btn-primary">Save Stock</button></form></div>@endsection

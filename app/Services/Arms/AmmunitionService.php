@@ -206,10 +206,10 @@ class AmmunitionService
 
             'items' => Ammunition::count(),
 
-            'total_rounds' => Ammunition::sum('quantity_on_hand'),
+            'total_rounds' => Ammunition::sum('quantity'),
 
             'inventory_value' => Ammunition::selectRaw(
-                'SUM(quantity_on_hand * unit_cost) as total'
+                'COALESCE(SUM(quantity * unit_cost), 0) as total'
             )->value('total'),
 
             'low_stock' => Ammunition::lowStock()->count(),
@@ -225,7 +225,7 @@ class AmmunitionService
     public function lowStock()
     {
         return Ammunition::lowStock()
-            ->orderBy('quantity_on_hand')
+            ->orderBy('quantity')
             ->get();
     }
 

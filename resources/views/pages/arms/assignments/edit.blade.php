@@ -1,6 +1,8 @@
-@extends('layouts.app')
+@extends('layout.master')
 
-@section('title','Return Firearm')
+@push('plugin-styles')
+    <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
+@endpush
 
 @section('content')
 

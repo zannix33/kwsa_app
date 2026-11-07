@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Failed Inspections') @section('content')<div class="container-fluid"><h3>Failed Inspections</h3><p>Use the module list to review and manage records in this category.</p><a class="btn btn-secondary" href="{{ route('arms.inspections.index') }}">Back to Inspections</a></div>@endsection

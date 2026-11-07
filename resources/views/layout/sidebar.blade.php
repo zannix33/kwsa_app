@@ -135,18 +135,39 @@
 
 
       <li class="nav-item {{ active_class(['basic-ui/accounting']) }}">
-          <a class="nav-link" data-toggle="collapse" href="#operations" aria-expanded="{{ is_active_route(['basic-ui/*']) }}" aria-controls="basic-ui">
+          <a class="nav-link" data-toggle="collapse" href="#operations" aria-expanded="{{ is_active_route(['basic-ui/*', 'arms*']) }}" aria-controls="basic-ui">
               <i class="menu-icon mdi mdi-head-cog"></i>
               <span class="menu-title">Operations</span>
               <i class="menu-arrow"></i>
           </a>
-          <div class="collapse {{ show_class(['basic-ui/accounting']) }}" id="operations">
+          <div class="collapse {{ show_class(['basic-ui/accounting', 'arms*']) }}" id="operations">
               <ul class="nav flex-column sub-menu">
                   <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
                       <a class="nav-link" href="{{ route('incidents.index') }}">Incident Reports</a>
                   </li>
-                  <li class="nav-item {{ active_class(['basic-ui/buttons']) }}">
-                      <a class="nav-link" href="{{ route('arms.index') }}">Arms Inventory</a>
+                  <li class="nav-item {{ active_class(['arms/dashboard']) }}">
+                      <a class="nav-link" href="{{ route('arms.dashboard') }}">Arms Dashboard</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms']) }}">
+                      <a class="nav-link" href="{{ route('arms.index') }}">Firearms Inventory</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/assignments*']) }}">
+                      <a class="nav-link" href="{{ route('arms.assignments.index') }}">Assignments</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/maintenances*']) }}">
+                      <a class="nav-link" href="{{ route('arms.maintenances.index') }}">Maintenance</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/inspections*']) }}">
+                      <a class="nav-link" href="{{ route('arms.inspections.index') }}">Inspections</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/licenses*']) }}">
+                      <a class="nav-link" href="{{ route('arms.licenses.index') }}">Firearm Licenses</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/ammunition*']) }}">
+                      <a class="nav-link" href="{{ route('arms.ammunition.index') }}">Ammunition Inventory</a>
+                  </li>
+                  <li class="nav-item {{ active_class(['arms/ammunition-releases*']) }}">
+                      <a class="nav-link" href="{{ route('arms.ammunition-releases.index') }}">Ammunition Releases</a>
                   </li>
                   <li class="nav-item {{ active_class(['basic-ui/dropdowns']) }}">
                       <a class="nav-link" href="{{ url('/') }}">DDO</a>

@@ -40,7 +40,7 @@ class ArmMaintenanceController extends Controller
     {
         return view('arms.maintenances.create', [
 
-            'arms' => Arm::orderBy('make')
+            'arms' => Arm::orderBy('manufacturer')
                 ->orderBy('model')
                 ->get()
 
@@ -96,7 +96,7 @@ class ArmMaintenanceController extends Controller
 
                 'maintenance' => $maintenance,
 
-                'arms' => Arm::orderBy('make')
+                'arms' => Arm::orderBy('manufacturer')
                     ->orderBy('model')
                     ->get()
 

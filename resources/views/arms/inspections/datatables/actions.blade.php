@@ -1,0 +1,1 @@
+<a href="{{ route(request()->route()->getName().'.show', $row->id) }}" class="btn btn-sm btn-info">View</a>

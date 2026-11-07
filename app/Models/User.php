@@ -46,6 +46,7 @@ class User extends Authenticatable
         'lesp_issued',
         'lesp_expiry',
         'date_hired',
+        'employment_status',
         'dt_date',
         'photo',
         'department_type',

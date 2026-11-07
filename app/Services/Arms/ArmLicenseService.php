@@ -7,6 +7,7 @@ use App\Models\ArmLicense;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
 
 class ArmLicenseService
@@ -61,6 +62,9 @@ class ArmLicenseService
     public function store(Request $request)
     {
         $data = $this->validate($request);
+        if ($request->hasFile('document')) {
+            $data['document'] = $request->file('document')->store('arms/licenses', 'public');
+        }
 
         return DB::transaction(function () use ($data) {
 
@@ -77,7 +81,11 @@ class ArmLicenseService
         Request $request
     ) {
 
-        $data = $this->validate($request);
+        $data = $this->validate($request, $license->id);
+        if ($request->hasFile('document')) {
+            if ($license->document) { Storage::disk('public')->delete($license->document); }
+            $data['document'] = $request->file('document')->store('arms/licenses', 'public');
+        }
 
         return DB::transaction(function () use (
             $license,
@@ -263,65 +271,20 @@ class ArmLicenseService
     /**
      * Validation
      */
-    protected function validate(
-        Request $request
-    ) {
-
-        return Validator::make(
-            $request->all(),
-            [
-
-                'arm_id' => [
-                    'required',
-                    'exists:arms,id'
-                ],
-
-                'license_number' => [
-                    'required',
-                    'max:255'
-                ],
-
-                'registration_number' => [
-                    'required',
-                    'max:255'
-                ],
-
-                'permit_number' => [
-                    'required',
-                    'max:255'
-                ],
-
-                'license_type' => [
-                    'required',
-                    'max:100'
-                ],
-
-                'issue_date' => [
-                    'required',
-                    'date'
-                ],
-
-                'expiry_date' => [
-                    'required',
-                    'date',
-                    'after:issue_date'
-                ],
-
-                'issued_by' => [
-                    'required',
-                    'max:255'
-                ],
-
-                'document' => [
-                    'nullable'
-                ],
-
-                'remarks' => [
-                    'nullable'
-                ]
-
-            ]
-        )->validate();
-
+    protected function validate(Request $request, $id = null)
+    {
+        return Validator::make($request->all(), [
+            'arm_id' => ['required', 'exists:arms,id'],
+            'license_number' => ['required', 'string', 'max:255', 'unique:arm_licenses,license_number,' . $id],
+            'registration_number' => ['nullable', 'string', 'max:255'],
+            'permit_number' => ['nullable', 'string', 'max:255'],
+            'license_type' => ['required', 'in:Firearm Registration,Authority to Carry,Permit to Transport,Other'],
+            'issue_date' => ['required', 'date'],
+            'expiry_date' => ['required', 'date', 'after:issue_date'],
+            'next_renewal' => ['nullable', 'date'],
+            'issued_by' => ['nullable', 'string', 'max:255'],
+            'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'remarks' => ['nullable', 'string'],
+        ])->validate();
     }
 }

@@ -1,0 +1,1 @@
+@extends('layouts.app') @section('title','Overdue Assignments') @section('content')<div class="container-fluid"><h3>Overdue Assignments</h3><a class="btn btn-secondary" href="{{ route('arms.assignments.index') }}">Back to Assignments</a></div>@endsection
