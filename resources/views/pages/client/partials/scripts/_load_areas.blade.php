@@ -64,15 +64,12 @@
         data-id="${area.id}"
         style="cursor:pointer;">
 
-            <td style="overflow-wrap:anywhere;">
-            <strong>${escapeHtml(area.name ?? '')}</strong>
-        <br>
-            <small class="text-muted">
-                ${escapeHtml(area.description ?? '')}
-            </small>
-        </td>
+            <td class="client-area-cell">
+                <strong class="client-area-name">${escapeHtml(area.name ?? '')}</strong>
+                ${area.description ? `<div class="text-muted client-area-description">${escapeHtml(area.description)}</div>` : ''}
+            </td>
 
-        <td style="overflow-wrap:anywhere;">${escapeHtml(regionName)}</td>
+            <td class="client-region-cell">${escapeHtml(regionName)}</td>
         <td class="text-center">
             <button type="button" class="btn btn-sm btn-outline-primary btn-edit-area" style="white-space:nowrap; padding-left:.4rem; padding-right:.4rem;"
                 data-id="${area.id}"
