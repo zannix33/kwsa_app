@@ -48,6 +48,16 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::resource('clients', ClientController::class);
 
+    // Client-owned branch operating schedules and closure calendar (temporary access for authenticated users).
+    Route::prefix('clients/{client}/branch-calendar')->name('clients.branch-calendar.')->group(function () {
+        Route::get('/closures', [\App\Http\Controllers\ClientBranchCalendarController::class, 'closures'])->name('closures');
+        Route::get('/closures/create', [\App\Http\Controllers\ClientBranchCalendarController::class, 'createClosure'])->name('closures.create');
+        Route::post('/closures', [\App\Http\Controllers\ClientBranchCalendarController::class, 'storeClosure'])->name('closures.store');
+        Route::get('/closures/{closure}/edit', [\App\Http\Controllers\ClientBranchCalendarController::class, 'editClosure'])->whereNumber('closure')->name('closures.edit');
+        Route::put('/closures/{closure}', [\App\Http\Controllers\ClientBranchCalendarController::class, 'updateClosure'])->whereNumber('closure')->name('closures.update');
+        Route::delete('/closures/{closure}', [\App\Http\Controllers\ClientBranchCalendarController::class, 'destroyClosure'])->whereNumber('closure')->name('closures.destroy');
+    });
+
     Route::prefix('clients/{client}/companies')->name('clients.companies.')->group(function () {
         Route::get('/', [\App\Http\Controllers\CompanyController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\CompanyController::class, 'create'])->name('create');

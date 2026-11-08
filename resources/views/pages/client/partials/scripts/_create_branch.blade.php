@@ -131,6 +131,8 @@
         $('#branchForm [name="operation_saturday_end"]').val(($button.attr('data-operation-saturday-end') || '').substring(0, 5));
         $('#branchForm [name="operation_sunday_start"]').val(($button.attr('data-operation-sunday-start') || '').substring(0, 5));
         $('#branchForm [name="operation_sunday_end"]').val(($button.attr('data-operation-sunday-end') || '').substring(0, 5));
+        $('#branchForm [name="is_closed_saturday"]').prop('checked', String($button.attr('data-is-closed-saturday')) === '1');
+        $('#branchForm [name="is_closed_sunday"]').prop('checked', String($button.attr('data-is-closed-sunday')) === '1');
         $('#branchModalLabel').text('Edit Branch');
         $('#branchForm button[type=submit]').html('<i class="fa fa-save"></i> Update Branch');
         $('#branchModal').modal('show');

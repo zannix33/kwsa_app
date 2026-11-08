@@ -38,12 +38,19 @@ class BranchController extends Controller
 
             'operation_sunday_end' => 'nullable|date_format:H:i|after:operation_sunday_start',
 
+            'is_closed_saturday' => 'nullable|boolean',
+
+            'is_closed_sunday' => 'nullable|boolean',
+
         ]);
 
         if (!empty($validated['company_id'])) {
             $area = \App\Models\Area::findOrFail($validated['area_id']);
             abort_unless(\App\Models\Company::where('id', $validated['company_id'])->where('client_id', $area->client_id)->exists(), 422, 'Selected Company does not belong to this Client.');
         }
+
+        $validated['is_closed_saturday'] = $request->boolean('is_closed_saturday');
+        $validated['is_closed_sunday'] = $request->boolean('is_closed_sunday');
 
         $branch = Branch::create($validated);
 
@@ -87,12 +94,19 @@ class BranchController extends Controller
 
             'operation_sunday_end' => 'nullable|date_format:H:i|after:operation_sunday_start',
 
+            'is_closed_saturday' => 'nullable|boolean',
+
+            'is_closed_sunday' => 'nullable|boolean',
+
         ]);
 
         if (!empty($validated['company_id'])) {
             $area = $branch->area;
             abort_unless(\App\Models\Company::where('id', $validated['company_id'])->where('client_id', $area->client_id)->exists(), 422, 'Selected Company does not belong to this Client.');
         }
+
+        $validated['is_closed_saturday'] = $request->boolean('is_closed_saturday');
+        $validated['is_closed_sunday'] = $request->boolean('is_closed_sunday');
 
         $branch->update($validated);
 

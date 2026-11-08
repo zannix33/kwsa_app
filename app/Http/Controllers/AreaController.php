@@ -105,6 +105,8 @@ class AreaController extends Controller
                     'operation_saturday_end',
                     'operation_sunday_start',
                     'operation_sunday_end',
+                    'is_closed_saturday',
+                    'is_closed_sunday',
                     'company_id'
                 ])->map(function ($branch) {
                     $branch->company_name = optional($branch->company)->name;

@@ -134,6 +134,23 @@
                         </div>
                     </div>
 
+                    <hr>
+                    <h6 class="mb-3">Weekend Closure Settings</h6>
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-2">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="is_closed_saturday" name="is_closed_saturday" value="1">
+                                <label class="custom-control-label" for="is_closed_saturday">Branch is closed every Saturday</label>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6 mb-2">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="is_closed_sunday" name="is_closed_sunday" value="1">
+                                <label class="custom-control-label" for="is_closed_sunday">Branch is closed every Sunday</label>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">

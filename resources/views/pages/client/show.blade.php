@@ -103,6 +103,14 @@
             </tbody></table></div>
         </div>
 
+        <div class="card mb-4">
+                <div class="card-header"><strong>Branch Operating Calendar</strong></div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Manage this client's normal weekly operating days and special closure dates. These settings do not change billing, payroll, or attendance.</p>
+                    <a href="{{ route('clients.branch-calendar.closures', $client) }}" class="btn btn-outline-secondary mb-2"><i class="fa fa-calendar-times"></i> Closures &amp; Holidays</a>
+                </div>
+        </div>
+
         {{-- Area / Branch / Guards --}}
         <div class="row">
 
@@ -127,6 +135,49 @@
     @include('pages.client.partials.modals._assign_area_guard_modal')
 
     @include('pages.client.partials.modals._assign_branch_guard_modal')
+
+    {{-- Shared, authoritative toolbar layout. Loaded after both card partials. --}}
+    <style id="client-area-branch-search-toolbar">
+        .client-search-controls {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        .client-search-controls > .client-search-input-wrap {
+            display: block !important;
+            position: relative !important;
+            flex: 1 1 0% !important;
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+        .client-search-controls > .client-search-input-wrap > .form-control {
+            display: block !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            height: 36px !important;
+        }
+        .client-search-controls > .client-search-clear {
+            position: static !important;
+            display: inline-flex !important;
+            flex: 0 0 64px !important;
+            width: 64px !important;
+            min-width: 64px !important;
+            max-width: 64px !important;
+            height: 36px !important;
+            margin: 0 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+        }
+    </style>
 @endsection
 
 @push('custom-scripts')

@@ -1,5 +1,37 @@
 <script>
 
+    // Delegated search continues to work after AJAX replaces the area rows.
+    function applyAreaSearch() {
+        var query = String($('#areaSearch').val() || '').trim().toLocaleLowerCase();
+        var $rows = $('#areas-table tr.area-item');
+        var visible = 0;
+        $('#area-search-no-results').remove();
+        $rows.each(function () {
+            var haystack = String($(this).attr('data-search') || $(this).text()).toLocaleLowerCase();
+            var match = !query || haystack.indexOf(query) !== -1;
+            $(this).toggle(match);
+            if (match) visible++;
+        });
+        if (query && $rows.length && visible === 0) {
+            $('#areas-table').append('<tr id="area-search-no-results"><td colspan="3" class="text-center text-muted py-3">No areas match your search.</td></tr>');
+        }
+        return visible;
+    }
+
+    $(document).off('input.areaSearch', '#areaSearch')
+        .on('input.areaSearch', '#areaSearch', applyAreaSearch);
+    $(document).off('click.areaSearch', '#clearAreaSearch')
+        .on('click.areaSearch', '#clearAreaSearch', function () {
+            $('#areaSearch').val('');
+            applyAreaSearch();
+            $('#areaSearch').trigger('focus');
+        });
+
+    function setAreaSearchHint(text) {
+        $('#areaSearchHint').text(text);
+    }
+
+
     /*
     |--------------------------------------------------------------------------
     | Escape HTML
@@ -27,6 +59,7 @@
     */
     function loadAreas(selectedId = null)
     {
+        setAreaSearchHint('Loading areas...');
         $('#areas-table').html(
             loadingRow(3, 'Loading areas...')
         );
@@ -43,7 +76,7 @@
                     $('#areas-table').html(
                         emptyRow(3, 'No Areas Found.')
                     );
-
+                    setAreaSearchHint('0 areas.');
                     return;
                 }
 
@@ -62,6 +95,7 @@
                     html += `
         <tr class="area-item ${active}"
         data-id="${area.id}"
+        data-search="${escapeHtml([area.name, area.description, area.region_code, area.region_name].filter(Boolean).join(' '))}"
         style="cursor:pointer;">
 
             <td class="client-area-cell">
@@ -84,6 +118,9 @@
                 });
 
                 $('#areas-table').html(html);
+                $('#areaSearch').prop('disabled', false);
+                setAreaSearchHint(areas.length + ' area(s).');
+                applyAreaSearch();
 
                 /*
                 |--------------------------------------------------------------------------
@@ -100,6 +137,7 @@
                 $('#areas-table').html(
                     errorRow(3, 'Unable to load Areas.')
                 );
+                setAreaSearchHint('Unable to search areas until they load.');
             }
         });
     }
