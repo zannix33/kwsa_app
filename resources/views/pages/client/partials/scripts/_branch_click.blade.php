@@ -23,13 +23,7 @@
         // Store selected branch
         selectedBranchId = $(this).data('id');
 
-        // Show loading while retrieving guards
-        $('#guards-table').html(
-            loadingRow(4, 'Loading branch guards...')
-        );
-
-        // Load assigned guards
-        loadBranchGuards(selectedBranchId);
+        // Guards are shown on demand in the guards popup.
 
     });
 
@@ -50,4 +44,15 @@
 
     });
 
+</script>
+
+<script>
+$(document).on('click', '#btnViewBranchGuards', function () {
+    if (!selectedBranchId) { alert('Please select a Branch first.'); return; }
+    $('#guardsModalLabel').text('Branch Guards');
+    $('#guards-modal-table').html(loadingRow(4, 'Loading branch guards...'));
+    $('#btnAssignAreaGuard').hide(); $('#btnAssignBranchGuard').show();
+    $('#guardsModal').modal('show');
+    loadBranchGuards(selectedBranchId);
+});
 </script>

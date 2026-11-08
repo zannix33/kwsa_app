@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyTimeRecord;
+use App\Models\Payroll;
+use App\Services\Payroll\PayrollCalculationService;
+use App\Services\PayrollItemService;
 use App\Models\PayrollPeriod;
 use App\Models\User;
 use App\Models\Area;
+use App\Models\Branch;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -13,6 +18,175 @@ use Illuminate\Support\Facades\DB;
 
 class DailyTimeRecordController extends Controller
 {
+
+    /**
+     * Browse and filter daily time records.
+     */
+    public function index(Request $request)
+    {
+        $query = DailyTimeRecord::with(['user', 'area', 'branch', 'payroll'])
+            ->orderByDesc('work_date')->orderByDesc('id');
+
+        if ($request->filled('employee')) {
+            $term = $request->employee;
+            $query->whereHas('user', function ($q) use ($term) {
+                $q->where('firstname', 'like', "%{$term}%")
+                  ->orWhere('lastname', 'like', "%{$term}%");
+            });
+        }
+        if ($request->filled('from_date')) $query->whereDate('work_date', '>=', $request->from_date);
+        if ($request->filled('to_date')) $query->whereDate('work_date', '<=', $request->to_date);
+
+        $records = $query->paginate(25)->appends($request->query());
+        return view('pages.dtr.index', compact('records'));
+    }
+
+    public function edit(DailyTimeRecord $dtr)
+    {
+        $dtr->load(['user', 'area', 'branch', 'payroll']);
+        if ($dtr->payroll && strtolower($dtr->payroll->status) === 'paid') {
+            return redirect()->route('dtr.index')->with('error', 'This DTR belongs to a paid payroll and cannot be edited.');
+        }
+        $areas = Area::orderBy('name')->get();
+        $branches = Branch::when($dtr->area_id, function ($query) use ($dtr) {
+            $query->where('area_id', $dtr->area_id);
+        })->orderBy('name')->get();
+        return view('pages.dtr.edit', compact('dtr', 'areas', 'branches'));
+    }
+
+    public function update(Request $request, DailyTimeRecord $dtr)
+    {
+        $request->validate([
+            'work_date' => 'required|date',
+            'area_id' => 'required|exists:areas,id',
+            'branch_id' => 'nullable|exists:branches,id',
+            'operation_start' => 'required|date_format:H:i',
+            'operation_end' => 'required|date_format:H:i',
+            'time_in' => 'required|date_format:H:i',
+            'time_out' => 'required|date_format:H:i',
+            'break_minutes' => 'nullable|integer|min:0|max:1440',
+            'remarks' => 'nullable|string|max:2000',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        return DB::transaction(function () use ($request, $dtr) {
+            $dtr = DailyTimeRecord::whereKey($dtr->id)->lockForUpdate()->firstOrFail();
+            $payroll = $dtr->payroll_id ? Payroll::find($dtr->payroll_id) : null;
+            if ($payroll && strtolower($payroll->status) === 'paid') {
+                return back()->withInput()->with('error', 'Paid payroll records cannot be changed.');
+            }
+            if ($payroll) {
+                $period = $payroll->period;
+                if ($period && (
+                    Carbon::parse($request->work_date)->lt(Carbon::parse($period->date_from)->startOfDay()) ||
+                    Carbon::parse($request->work_date)->gt(Carbon::parse($period->date_to)->endOfDay())
+                )) {
+                    return back()->withInput()->with('error', 'The work date must remain within the linked payroll period. Remove/reassign the DTR through payroll administration if the date truly needs to move.');
+                }
+            }
+
+            $before = $dtr->only([
+                'work_date','area_id','branch_id','operation_start','operation_end',
+                'time_in','time_out','break_minutes','is_rest_day','is_holiday',
+                'special_holiday','is_extended_hours','remarks','regular_hours',
+                'overtime_hours','extended_hours','night_differential_hours',
+                'late_hours','undertime_hours','total_hours'
+            ]);
+
+            $record = $request->only([
+                'work_date','area_id','branch_id','operation_start','operation_end',
+                'time_in','time_out','break_minutes'
+            ]);
+            $calculated = $this->calculateDtr($record);
+            $dtr->fill([
+                'work_date' => $record['work_date'],
+                'area_id' => $record['area_id'],
+                'branch_id' => $record['branch_id'] ?: null,
+                'operation_start' => $calculated['operation_start'],
+                'operation_end' => $calculated['operation_end'],
+                'time_in' => $calculated['time_in'],
+                'time_out' => $calculated['time_out'],
+                'break_minutes' => $record['break_minutes'] ?? 60,
+                'scheduled_hours' => $calculated['scheduled_hours'],
+                'regular_hours' => $calculated['regular_hours'],
+                'overtime_hours' => $calculated['overtime_hours'],
+                'extended_hours' => $calculated['extended_hours'],
+                'night_differential_hours' => $calculated['night_differential_hours'],
+                'late_hours' => $calculated['late_hours'],
+                'undertime_hours' => $calculated['undertime_hours'],
+                'total_hours' => $calculated['worked_hours'],
+                'is_rest_day' => $request->boolean('is_rest_day'),
+                'is_holiday' => $request->boolean('is_holiday'),
+                'special_holiday' => $request->boolean('special_holiday'),
+                'is_extended_hours' => $request->boolean('is_extended_hours'),
+                'remarks' => $request->remarks,
+            ])->save();
+
+            DB::table('dtr_audits')->insert([
+                'daily_time_record_id' => $dtr->id,
+                'user_id' => Auth::id(),
+                'reason' => $request->reason,
+                'before_data' => json_encode($before),
+                'after_data' => json_encode($dtr->fresh()->only(array_keys($before))),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+
+            return redirect()->route('dtr.index')->with(
+                'success',
+                $payroll ? 'DTR updated. Reprocess the associated payroll to apply the attendance changes.' : 'DTR updated and recalculated successfully.'
+            );
+        });
+    }
+
+    /**
+     * Rebuild attendance-related payroll items only. Existing government,
+     * loan, and fixed deductions are deliberately preserved and never re-applied.
+     */
+    public function reprocessPayroll(Payroll $payroll, PayrollCalculationService $calculator)
+    {
+        if (strtolower($payroll->status) === 'paid') {
+            return back()->with('error', 'Paid payrolls cannot be reprocessed.');
+        }
+
+        try {
+            DB::transaction(function () use ($payroll, $calculator) {
+                $payroll = Payroll::whereKey($payroll->id)->lockForUpdate()->firstOrFail();
+                if (strtolower($payroll->status) === 'paid') {
+                    throw new \RuntimeException('Paid payrolls cannot be reprocessed.');
+                }
+
+                $dtrs = DailyTimeRecord::with(['area.client','branch.area.client'])
+                    ->where('payroll_id', $payroll->id)->orderBy('work_date')->get();
+
+                $result = $calculator->calculate($payroll->user, $dtrs);
+                $attendanceCodes = [
+                    'BASIC','OT','SOT','REGHOLIDAYOT','ND','REGHOLIDAY',
+                    'SPHOLIDAY','LATE','UT','CB'
+                ];
+                $payroll->items()->whereIn('code', $attendanceCodes)->delete();
+
+                foreach ($result['rate_breakdown'] as $b) {
+                    $label = 'Daily Rate: ₱' . number_format($b['daily_rate'], 2);
+                    if ($b['basic_pay'] > 0) PayrollItemService::earning($payroll,'BASIC','Basic Pay ('.$label.')',$b['basic_pay'],$b['regular_hours'],$b['hourly_rate']);
+                    if ($b['regular_overtime_pay'] > 0) PayrollItemService::earning($payroll,'OT','Regular Overtime ('.$label.')',$b['regular_overtime_pay'],$b['overtime_hours'],$b['regular_overtime_rate']);
+                    if ($b['special_overtime_pay'] > 0) PayrollItemService::earning($payroll,'SOT','Special Overtime ('.$label.')',$b['special_overtime_pay'],$b['special_overtime_hours'],$b['special_overtime_rate']);
+                    if ($b['regular_holiday_overtime_pay'] > 0) PayrollItemService::earning($payroll,'REGHOLIDAYOT','Regular Holiday Overtime ('.$label.')',$b['regular_holiday_overtime_pay'],$b['regular_holiday_overtime_hours'],$b['regular_holiday_overtime_rate']);
+                    if ($b['night_diff_pay'] > 0) PayrollItemService::earning($payroll,'ND','Night Differential ('.$label.')',$b['night_diff_pay'],$b['night_diff_hours'],$b['night_diff_rate']);
+                    if ($b['holiday_pay'] > 0) PayrollItemService::earning($payroll,'REGHOLIDAY','Regular Holiday Pay ('.$label.')',$b['holiday_pay']);
+                    if ($b['sp_holiday_pay'] > 0) PayrollItemService::earning($payroll,'SPHOLIDAY','Special Holiday Pay ('.$label.')',$b['sp_holiday_pay']);
+                }
+                PayrollItemService::deduction($payroll,'LATE','Late Deduction',$result['deductions']['late']);
+                PayrollItemService::deduction($payroll,'UT','Undertime Deduction',$result['deductions']['undertime']);
+                PayrollItemService::deduction($payroll,'CB','Cash Bond',$result['deductions']['CB']);
+                PayrollItemService::recalculate($payroll);
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Payroll reprocessing failed: '.$e->getMessage());
+        }
+
+        return back()->with('success', 'Payroll attendance items and totals were reprocessed. Existing loan, fixed, and government deductions were preserved.');
+    }
+
     public function createBulk()
     {
         //$users = User::orderBy('name')

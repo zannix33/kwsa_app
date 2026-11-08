@@ -106,21 +106,19 @@
         {{-- Area / Branch / Guards --}}
         <div class="row">
 
-            <div class="col-lg-3">
+            <div class="col-lg-5 mb-3">
                 @include('pages.client.partials.cards._areas')
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-7 mb-3">
                 @include('pages.client.partials.cards._branches')
-            </div>
-
-            <div class="col-lg-5">
-                @include('pages.client.partials.cards._guards')
             </div>
 
         </div>
 
     </div>
+
+    @include('pages.client.partials.modals._guards_modal')
 
     @include('pages.client.partials.modals._area_modal')
 

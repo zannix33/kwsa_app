@@ -17,7 +17,7 @@
 
         if (!guards || guards.length === 0) {
 
-            $('#guards-table').html(
+            $('#guards-modal-table').html(
                 emptyRow(4, 'No guards assigned.')
             );
 
@@ -61,7 +61,7 @@
 
                 <td>
 
-                    ${guard.employee_no ?? ''}
+                    ${escapeHtml(guard.employee_no ?? '')}
 
                 </td>
 
@@ -69,7 +69,7 @@
 
                     <strong>
 
-                        ${guard.name}
+                        ${escapeHtml(guard.name ?? '')}
 
                     </strong>
 
@@ -77,9 +77,7 @@
 
                 <td>
 
-                    ${guard.position
-                ? guard.position.name
-                : '-'}
+                    ${escapeHtml(guard.position ? guard.position.name : '-')}
 
                 </td>
 
@@ -94,7 +92,7 @@
 
         });
 
-        $('#guards-table').html(html);
+        $('#guards-modal-table').html(html);
 
     }
 

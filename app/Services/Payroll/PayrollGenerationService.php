@@ -569,42 +569,38 @@ class PayrollGenerationService
         Payroll $payroll
     ) {
 
-        $periodEnd = \Carbon\Carbon::parse($period->date_to);
+        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
 
-        if ($periodEnd->day < 16) {
-            return;
-        }
+        // Payroll periods are semi-monthly: 1st-15th and 16th-end.
+        $isFirstPayroll = $periodStart->day <= 15 && $periodEnd->day <= 15;
+        $isSecondPayroll = $periodStart->day >= 16;
 
         // Must run inside the transaction used to generate this payroll.
         $loans = Loan::where('user_id', $user->id)
             ->where('status', 'Active')
             ->where('outstanding_balance', '>', 0)
-            ->whereDate(
-                'deduction_start_date',
-                '<=',
-                $period->date_to
-            )
+            ->whereDate('deduction_start_date', '<=', $period->date_to)
             ->where(function ($query) use ($period) {
                 $query->whereNull('deduction_end_date')
-                    ->orWhereDate(
-                        'deduction_end_date',
-                        '>=',
-                        $period->date_from
-                    );
+                    ->orWhereDate('deduction_end_date', '>=', $period->date_from);
             })
             ->lockForUpdate()
             ->get();
 
         foreach ($loans as $loan) {
+            $deductionStartDate = \Carbon\Carbon::parse($loan->deduction_start_date);
 
-            $periodStart = \Carbon\Carbon::parse($period->date_from);
-            $periodEnd = \Carbon\Carbon::parse($period->date_to);
+            // The start-date day selects the recurring monthly cutoff:
+            // 1-15 => first payroll; 16-end => second payroll.
+            $loanStartsInFirstHalf = $deductionStartDate->day <= 15;
+            if (($loanStartsInFirstHalf && !$isFirstPayroll) ||
+                (!$loanStartsInFirstHalf && !$isSecondPayroll)) {
+                continue;
+            }
 
-            // Has this loan already been paid in the same calendar month?
-            $alreadyPaidThisMonth = LoanPayment::where(
-                'loan_id',
-                $loan->id
-            )
+            // Only one installment per loan per calendar month.
+            $alreadyPaidThisMonth = LoanPayment::where('loan_id', $loan->id)
                 ->whereYear('payment_date', $periodEnd->year)
                 ->whereMonth('payment_date', $periodEnd->month)
                 ->exists();
@@ -612,7 +608,8 @@ class PayrollGenerationService
             if ($alreadyPaidThisMonth) {
                 continue;
             }
-            // Do not record the same loan twice for this payroll period.
+
+            // Keep the unique loan/payroll-period guard as a second safeguard.
             $alreadyPaid = LoanPayment::where('loan_id', $loan->id)
                 ->where('payroll_period_id', $period->id)
                 ->exists();
@@ -623,11 +620,7 @@ class PayrollGenerationService
 
             $monthlyAmortization = (float) $loan->monthly_amortization;
             $outstandingBalance = (float) $loan->outstanding_balance;
-
-            $deductionAmount = round(
-                min($monthlyAmortization, $outstandingBalance),
-                2
-            );
+            $deductionAmount = round(min($monthlyAmortization, $outstandingBalance), 2);
 
             if ($deductionAmount <= 0) {
                 continue;
@@ -638,23 +631,18 @@ class PayrollGenerationService
                     $code = 'SSS_LOAN';
                     $description = 'SSS Loan Repayment';
                     break;
-
                 case 'Pag-IBIG':
                     $code = 'PAGIBIG_LOAN';
                     $description = 'Pag-IBIG Loan Repayment';
                     break;
-
                 case 'Company':
                     $code = 'COMPANY_LOAN';
                     $description = 'Company Loan Repayment';
                     break;
-
                 default:
-                    // Ignore unknown providers rather than misclassify them.
                     continue 2;
             }
 
-            // Add the deduction to this payroll.
             PayrollItemService::deduction(
                 $payroll,
                 $code,
@@ -662,7 +650,6 @@ class PayrollGenerationService
                 $deductionAmount
             );
 
-            // Record the repayment against this payroll period.
             LoanPayment::create([
                 'loan_id' => $loan->id,
                 'payroll_period_id' => $period->id,
@@ -671,27 +658,16 @@ class PayrollGenerationService
                 'payment_method' => 'Payroll',
             ]);
 
-            // Update the loan balance.
-            $newTotalPaid = round(
-                (float) $loan->total_paid + $deductionAmount,
-                2
-            );
-
-            $newBalance = round(
-                max(0, $outstandingBalance - $deductionAmount),
-                2
-            );
+            $newTotalPaid = round((float) $loan->total_paid + $deductionAmount, 2);
+            $newBalance = round(max(0, $outstandingBalance - $deductionAmount), 2);
 
             $loan->update([
                 'total_paid' => $newTotalPaid,
                 'outstanding_balance' => $newBalance,
-                'status' => $newBalance <= 0
-                    ? 'Fully Paid'
-                    : 'Active',
+                'status' => $newBalance <= 0 ? 'Fully Paid' : 'Active',
             ]);
         }
     }
-
 
     public function generate13thMonth($areaId,$from,$to)
     {

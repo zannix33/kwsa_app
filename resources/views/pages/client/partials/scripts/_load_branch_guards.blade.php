@@ -11,7 +11,7 @@
 
         if (!branchId) {
 
-            $('#guards-table').html(
+            $('#guards-modal-table').html(
                 emptyRow(4, 'Select a Branch.')
             );
 
@@ -19,7 +19,7 @@
 
         }
 
-        $('#guards-table').html(
+        $('#guards-modal-table').html(
             loadingRow(4, 'Loading guards...')
         );
 
@@ -33,13 +33,16 @@
 
             success: function (guards) {
 
+                $('#guardsModalContext').text('Branch guards');
+                $('#btnAssignAreaGuard').hide();
+                $('#btnAssignBranchGuard').show();
                 renderGuardsTable(guards, 'branch');
 
             },
 
             error: function () {
 
-                $('#guards-table').html(
+                $('#guards-modal-table').html(
                     errorRow(4, 'Unable to load guards.')
                 );
 

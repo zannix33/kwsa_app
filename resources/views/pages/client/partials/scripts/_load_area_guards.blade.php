@@ -11,7 +11,7 @@
 
         if (!areaId) {
 
-            $('#guards-table').html(
+            $('#guards-modal-table').html(
                 emptyRow(4, 'Select an Area.')
             );
 
@@ -19,7 +19,7 @@
 
         }
 
-        $('#guards-table').html(
+        $('#guards-modal-table').html(
             loadingRow(4, 'Loading guards...')
         );
 
@@ -33,13 +33,16 @@
 
             success: function (guards) {
 
+                $('#guardsModalContext').text('Area guards');
+                $('#btnAssignAreaGuard').show();
+                $('#btnAssignBranchGuard').hide();
                 renderGuardsTable(guards, 'area');
 
             },
 
             error: function () {
 
-                $('#guards-table').html(
+                $('#guards-modal-table').html(
                     errorRow(4, 'Unable to load guards.')
                 );
 

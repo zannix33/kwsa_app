@@ -31,11 +31,6 @@
         // Remove branch highlight
         $('.branch-item').removeClass('table-primary');
 
-        // Reset guards table while loading
-        $('#guards-table').html(
-            loadingRow(4, 'Loading area guards...')
-        );
-
         // Reset branches table while loading
         $('#branches-table').html(
             loadingRow(2, 'Loading branches...')
@@ -44,8 +39,7 @@
         // Load branches for the selected area
         loadBranches(selectedAreaId);
 
-        // Load guards assigned directly to the area
-        loadAreaGuards(selectedAreaId);
+        // Guards are shown on demand in the guards popup.
 
     });
 
@@ -120,4 +114,15 @@ $(document).ready(function () {
 
 
 
+</script>
+
+<script>
+$(document).on('click', '#btnViewAreaGuards', function () {
+    if (!selectedAreaId) { alert('Please select an Area first.'); return; }
+    $('#guardsModalLabel').text('Area Guards');
+    $('#guards-modal-table').html(loadingRow(4, 'Loading area guards...'));
+    $('#btnAssignAreaGuard').show(); $('#btnAssignBranchGuard').hide();
+    $('#guardsModal').modal('show');
+    loadAreaGuards(selectedAreaId);
+});
 </script>

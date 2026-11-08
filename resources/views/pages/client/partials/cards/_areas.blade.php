@@ -2,18 +2,12 @@
 
     <div class="card-header d-flex justify-content-between align-items-center">
 
-        <strong>Areas</strong>
+        <strong style="font-size:1.1rem;">Areas</strong>
 
         <div>
 
-            {{-- Assign Guard --}}
-            <button type="button"
-                    class="btn btn-success btn-sm"
-                    id="btnAssignAreaGuard">
-
-                <i class="fa fa-user-plus"></i>
-                Assign Guard
-
+            <button type="button" class="btn btn-info btn-sm" id="btnViewAreaGuards">
+                <i class="fa fa-users"></i> View Guards
             </button>
 
             {{-- Create Area --}}
@@ -55,8 +49,8 @@
                         data-id="{{ $area->id }}"
                         style="cursor:pointer;">
 
-                        <td style="overflow-wrap:anywhere;">
-                            <strong>{{ $area->name }}</strong>
+                        <td style="overflow-wrap:anywhere; font-size: 1rem;">
+                            <strong class="client-area-name">{{ $area->name }}</strong>
 
                             @if($area->description)
                                 <br>
@@ -67,7 +61,7 @@
 
                         </td>
 
-                        <td style="overflow-wrap:anywhere;">
+                        <td style="overflow-wrap:anywhere; font-size: 1rem;">
                             {{ optional($area->region)->code }}
                             @if($area->region) - {{ $area->region->name }} @else - @endif
                         </td>
@@ -107,3 +101,8 @@
     </div>
 
 </div>
+
+<style>
+.client-area-name { font-size: 1rem; }
+#areas-table td, #areas-table th { padding: .7rem; vertical-align: middle; }
+</style>

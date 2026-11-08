@@ -119,6 +119,12 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::prefix('dtr')->group(function () {
 
+        // DTR browse, edit, update, and payroll reprocessing routes.
+        Route::get('/', [DailyTimeRecordController::class, 'index'])->name('dtr.index');
+        Route::get('/{dtr}/edit', [DailyTimeRecordController::class, 'edit'])->name('dtr.edit');
+        Route::put('/{dtr}', [DailyTimeRecordController::class, 'update'])->name('dtr.update');
+        Route::post('/payroll/{payroll}/reprocess', [DailyTimeRecordController::class, 'reprocessPayroll'])->name('dtr.payroll.reprocess');
+
         Route::get(
             '/bulk/create',
             [\App\Http\Controllers\DailyTimeRecordController::class,'createBulk']

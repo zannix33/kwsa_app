@@ -54,6 +54,11 @@ class DailyTimeRecord extends Model
         'time_out' => 'datetime',
     ];
 
+    public function payroll()
+    {
+        return $this->belongsTo(Payroll::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

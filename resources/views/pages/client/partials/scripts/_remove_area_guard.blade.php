@@ -45,7 +45,7 @@
 
             beforeSend:function(){
 
-                $('#guards-table').html(
+                $('#guards-modal-table').html(
                     loadingRow(4, 'Removing guard...')
                 );
 

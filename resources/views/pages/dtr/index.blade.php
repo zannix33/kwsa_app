@@ -4,155 +4,57 @@
     <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
 @endpush
 
+
 @section('content')
-    <div class="container-fluid">
-
-        <div class="card">
-
-            <div class="card-header d-flex justify-content-between align-items-center">
-
-                <h5 class="mb-0">
-                    Daily Time Records
-                </h5>
-
-                <a href="{{ route('dtr.create') }}"
-                   class="btn btn-primary btn-sm">
-                    Add DTR
-                </a>
-
-            </div>
-
-            <div class="card-body">
-
-                @if(session('success'))
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                <div class="table-responsive">
-
-                    <table id="dtrTable" class="table table-bordered table-striped">
-
-                        <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Employee</th>
-                            <th>Time In</th>
-                            <th>Time Out</th>
-                            <th>Break</th>
-                            <th>Regular</th>
-                            <th>OT</th>
-                            <th>ND</th>
-                            <th>Total</th>
-                            <th width="150">Action</th>
-                        </tr>
-                        </thead>
-
-                        <tbody>
-
-                        @forelse($dtrs as $dtr)
-
-                            <tr>
-
-                                <td>
-                                    {{ \Carbon\Carbon::parse($dtr->work_date)->format('M d, Y') }}
-                                </td>
-
-                                <td>
-                                    {{ $dtr->user->full_name }}
-                                </td>
-
-                                <td>
-                                    {{ \Carbon\Carbon::parse($dtr->time_in)->format('M d, Y h:i A') }}
-                                </td>
-
-                                <td>
-                                    {{ \Carbon\Carbon::parse($dtr->time_out)->format('M d, Y h:i A') }}
-                                </td>
-
-                                <td>
-                                    {{ $dtr->break_minutes }}
-                                </td>
-
-                                <td>
-                                    {{ number_format($dtr->regular_hours, 2) }}
-                                </td>
-
-                                <td>
-                                    {{ number_format($dtr->overtime_hours, 2) }}
-                                </td>
-
-                                <td>
-                                    {{ number_format($dtr->night_differential_hours, 2) }}
-                                </td>
-
-                                <td>
-                                    {{ number_format($dtr->total_hours, 2) }}
-                                </td>
-
-                                <td>
-
-                                    <a href="{{ route('dtr.edit', $dtr->id) }}"
-                                       class="btn btn-warning btn-sm">
-                                        Edit
-                                    </a>
-
-                                    <form action="{{ route('dtr.destroy', $dtr->id) }}"
-                                          method="POST"
-                                          style="display:inline-block">
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button
-                                            type="submit"
-                                            onclick="return confirm('Delete this DTR?')"
-                                            class="btn btn-danger btn-sm">
-                                            Delete
-                                        </button>
-
-                                    </form>
-
-                                </td>
-
-                            </tr>
-
-                        @empty
-
-                            <tr>
-                                <td colspan="10" class="text-center">
-                                    No records found.
-                                </td>
-                            </tr>
-
-                        @endforelse
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-                <div class="mt-3">
-                    {{ $dtrs->links() }}
-                </div>
-
-            </div>
-
-        </div>
-
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Daily Time Records</h3>
+        <a href="{{ route('dtr.bulk.create') }}" class="btn btn-primary">Bulk DTR Entry</a>
     </div>
+    @if(session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
+    @if(session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
+    <form method="GET" action="{{ route('dtr.index') }}" class="card card-body mb-3">
+        <div class="row">
+            <div class="col-md-3"><label>Employee</label><input name="employee" class="form-control" value="{{ request('employee') }}" placeholder="First or last name"></div>
+            <div class="col-md-3"><label>From</label><input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}"></div>
+            <div class="col-md-3"><label>To</label><input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}"></div>
+            <div class="col-md-3 d-flex align-items-end"><button class="btn btn-secondary mr-2">Search</button><a class="btn btn-light" href="{{ route('dtr.index') }}">Clear</a></div>
+        </div>
+    </form>
+    <div class="table-responsive">
+    <table class="table table-bordered table-striped table-sm">
+        <thead><tr>
+            <th>Date</th><th>Employee</th><th>Area / Branch</th><th>Time In</th><th>Time Out</th>
+            <th>Regular Hrs</th><th>OT Hrs</th><th>Extended Hrs</th><th>Night Diff Hrs</th><th>Late Hrs</th><th>Undertime Hrs</th><th>Payroll</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+        @forelse($records as $record)
+            <tr>
+                <td>{{ optional($record->work_date)->format('M d, Y') }}</td>
+                <td>{{ optional($record->user)->firstname }} {{ optional($record->user)->lastname }}</td>
+                <td>{{ optional($record->area)->name ?: '—' }} @if($record->branch) / {{ $record->branch->name }} @endif</td>
+                <td>{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</td>
+                <td>{{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('h:i A') : '—' }}</td>
+                <td class="text-right">{{ number_format((float)$record->regular_hours,2) }}</td>
+                <td class="text-right">{{ number_format((float)$record->overtime_hours,2) }}</td>
+                <td class="text-right">{{ number_format((float)$record->extended_hours,2) }}</td>
+                <td class="text-right">{{ number_format((float)$record->night_differential_hours,2) }}</td>
+                <td class="text-right">{{ number_format((float)$record->late_hours,2) }}</td>
+                <td class="text-right">{{ number_format((float)$record->undertime_hours,2) }}</td>
+                <td>{{ $record->payroll ? '#'.$record->payroll->id.' ('.$record->payroll->status.')' : 'Unprocessed' }}</td>
+                <td class="text-nowrap">
+                    <a class="btn btn-sm btn-info" href="{{ route('dtr.edit',$record) }}">Edit</a>
+                    @if($record->payroll && strtolower($record->payroll->status) !== 'paid')
+                    <form method="POST" action="{{ route('dtr.payroll.reprocess',$record->payroll) }}" class="d-inline" onsubmit="return confirm('Reprocess attendance items for this employee payroll? Existing loan and other scheduled deductions will be preserved.')">
+                        @csrf <button class="btn btn-sm btn-warning">Reprocess</button>
+                    </form>
+                    @endif
+                </td>
+            </tr>
+        @empty <tr><td colspan="13" class="text-center">No DTR records found.</td></tr> @endforelse
+        </tbody>
+    </table>
+    </div>
+    {{ $records->links() }}
+</div>
 @endsection
-
-@push('custom-scripts')
-    <script>
-        $(document).ready(function () {
-            $('#dtrTable').DataTable({
-                pageLength: 25,
-                responsive: true
-            });
-        });
-
-    </script>
-@endpush

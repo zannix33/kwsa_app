@@ -2,8 +2,12 @@
 
     <div class="card-header d-flex justify-content-between align-items-center">
 
-        <strong>Branches</strong>
+        <strong style="font-size:1.1rem;">Branches</strong>
 
+        <div>
+        <button type="button" class="btn btn-info btn-sm" id="btnViewBranchGuards">
+            <i class="fa fa-users"></i> View Guards
+        </button>
         <button type="button"
                 class="btn btn-primary btn-sm"
                 id="btnCreateBranch">
@@ -12,6 +16,7 @@
             Create
 
         </button>
+        </div>
 
     </div>
 
@@ -53,3 +58,8 @@
     </div>
 
 </div>
+
+<style>
+#branches-table td, #branches-table th { padding: .7rem; vertical-align: middle; }
+#branches-table td strong { font-size: 1rem; }
+</style>
