@@ -29,14 +29,19 @@
 
         <div class="table-responsive">
 
-            <table class="table table-hover table-bordered mb-0 w-100" style="table-layout:fixed;">
+            <table id="client-areas-table" class="table table-hover table-bordered mb-0 w-100">
+                <colgroup>
+                    <col class="client-area-column">
+                    <col class="client-region-column">
+                    <col class="client-action-column">
+                </colgroup>
 
                 <thead class="thead-light">
 
                 <tr>
-                    <th style="width:22%;">Area</th>
-                    <th style="width:58%;">Region</th>
-                    <th style="width:20%;" class="text-center">Action</th>
+                    <th>Area</th>
+                    <th>Region</th>
+                    <th class="text-center">Action</th>
                 </tr>
 
                 </thead>
@@ -53,8 +58,7 @@
                             <strong class="client-area-name">{{ $area->name }}</strong>
 
                             @if($area->description)
-                                <br>
-                                <small class="text-muted client-area-description">{{ $area->description }}</small>
+                                <div class="text-muted client-area-description">{{ $area->description }}</div>
                             @endif
 
                         </td>
@@ -101,37 +105,47 @@
 </div>
 
 <style>
-/* Keep long area descriptions and region names inside their own table cells. */
-#areas-table td,
-#areas-table th {
-    padding: .7rem;
+/* Explicit column sizing prevents long area descriptions from crossing cells. */
+#client-areas-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+}
+#client-areas-table .client-area-column { width: 32%; }
+#client-areas-table .client-region-column { width: 48%; }
+#client-areas-table .client-action-column { width: 20%; }
+#client-areas-table th,
+#client-areas-table td {
+    box-sizing: border-box;
+    padding: .65rem .75rem;
     vertical-align: middle;
     white-space: normal !important;
+    overflow: hidden;
 }
-#areas-table .client-area-cell,
-#areas-table .client-region-cell {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    white-space: normal !important;
+#client-areas-table .client-area-cell,
+#client-areas-table .client-region-cell {
     min-width: 0;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
-#areas-table .client-area-name {
-    display: block;
-    font-size: 1rem;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-}
-#areas-table .client-area-description {
+#client-areas-table .client-area-name,
+#client-areas-table .client-area-description {
     display: block;
     max-width: 100%;
-    margin-top: .15rem;
-    line-height: 1.25;
     white-space: normal !important;
     overflow-wrap: anywhere;
     word-break: break-word;
+    line-height: 1.3;
 }
-#areas-table .client-region-cell {
-    line-height: 1.35;
+#client-areas-table .client-area-name { font-size: 1rem; }
+#client-areas-table .client-area-description { margin-top: .15rem; }
+#client-areas-table .client-region-cell { line-height: 1.35; }
+#client-areas-table .btn-edit-area { white-space: nowrap; }
+@media (max-width: 576px) {
+    #client-areas-table .client-area-column { width: 38%; }
+    #client-areas-table .client-region-column { width: 42%; }
+    #client-areas-table .client-action-column { width: 20%; }
+    #client-areas-table th, #client-areas-table td { padding: .45rem .4rem; }
 }
 </style>
