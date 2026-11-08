@@ -49,19 +49,17 @@
                         data-id="{{ $area->id }}"
                         style="cursor:pointer;">
 
-                        <td style="overflow-wrap:anywhere; font-size: 1rem;">
+                        <td class="client-area-cell">
                             <strong class="client-area-name">{{ $area->name }}</strong>
 
                             @if($area->description)
                                 <br>
-                                <small class="text-muted">
-                                    {{ $area->description }}
-                                </small>
+                                <small class="text-muted client-area-description">{{ $area->description }}</small>
                             @endif
 
                         </td>
 
-                        <td style="overflow-wrap:anywhere; font-size: 1rem;">
+                        <td class="client-region-cell">
                             {{ optional($area->region)->code }}
                             @if($area->region) - {{ $area->region->name }} @else - @endif
                         </td>
@@ -103,6 +101,37 @@
 </div>
 
 <style>
-.client-area-name { font-size: 1rem; }
-#areas-table td, #areas-table th { padding: .7rem; vertical-align: middle; }
+/* Keep long area descriptions and region names inside their own table cells. */
+#areas-table td,
+#areas-table th {
+    padding: .7rem;
+    vertical-align: middle;
+    white-space: normal !important;
+}
+#areas-table .client-area-cell,
+#areas-table .client-region-cell {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal !important;
+    min-width: 0;
+}
+#areas-table .client-area-name {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+#areas-table .client-area-description {
+    display: block;
+    max-width: 100%;
+    margin-top: .15rem;
+    line-height: 1.25;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+#areas-table .client-region-cell {
+    line-height: 1.35;
+}
 </style>
