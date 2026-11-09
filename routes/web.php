@@ -203,6 +203,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('allowances/assign', [\App\Http\Controllers\AllowanceController::class, 'store'])->name('allowances.store');
     Route::post('allowances/{employeeAllowance}/toggle', [\App\Http\Controllers\AllowanceController::class, 'toggle'])->name('allowances.toggle');
 
+    // Employee reimbursements (automatically eligible in filing-date payroll period)
+    Route::get('reimbursements', [\App\Http\Controllers\EmployeeReimbursementController::class, 'index'])->name('reimbursements.index');
+    Route::post('reimbursements', [\App\Http\Controllers\EmployeeReimbursementController::class, 'store'])->name('reimbursements.store');
+    Route::delete('reimbursements/{reimbursement}', [\App\Http\Controllers\EmployeeReimbursementController::class, 'destroy'])->name('reimbursements.destroy');
+
     // Fixed employee deductions (separate from loans)
     Route::resource('employee-deductions', EmployeeDeductionController::class)
         ->only(['index', 'create', 'store', 'show']);

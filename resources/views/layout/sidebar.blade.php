@@ -114,6 +114,10 @@
                       <a class="nav-link" href="{{ route('allowances.index') }}">Allowances</a>
                   </li>
 
+                  <li class="nav-item {{ active_class(['reimbursements*']) }}">
+                      <a class="nav-link" href="{{ route('reimbursements.index') }}">Reimbursements</a>
+                  </li>
+
               </ul>
           </div>
       </li>

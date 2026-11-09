@@ -176,7 +176,14 @@ class PayrollGenerationService
                 'dtr_ids' => $dtrs->pluck('id')->all(),
             ]);
 
-            if ($dtrs->isEmpty()) {
+            // Match reimbursements to this payroll period at processing time using filed_date.
+            // Filing a reimbursement does not pre-assign it to a payroll period.
+            $filedReimbursements = \App\Models\EmployeeReimbursement::where('user_id', $user->id)
+                ->whereDate('filed_date', '>=', \Carbon\Carbon::parse($period->date_from)->toDateString())
+                ->whereDate('filed_date', '<=', \Carbon\Carbon::parse($period->date_to)->toDateString())
+                ->whereNull('payroll_id')->get();
+
+            if ($dtrs->isEmpty() && $filedReimbursements->isEmpty()) {
                 return;
             }
 
@@ -186,10 +193,11 @@ class PayrollGenerationService
             |--------------------------------------------------------------------------
             */
 
-            $result = $this->calculator->calculate(
-                $user,
-                $dtrs
-            );
+            $result = $dtrs->isEmpty() ? [
+                'rate_breakdown' => [],
+                'earnings' => ['overall_pay' => 0],
+                'deductions' => ['late' => 0, 'undertime' => 0, 'CB' => 0],
+            ] : $this->calculator->calculate($user, $dtrs);
 
             /*
             |--------------------------------------------------------------------------
@@ -321,6 +329,17 @@ class PayrollGenerationService
             | Allowances are payroll earnings only; no billing records are made.
             */
             $this->applyEmployeeAllowances($user, $period, $payroll, $dtrs);
+
+            // Reimbursements are automatically eligible based on filing date and are not prorated.
+            // Match reimbursements to this payroll period at processing time using filed_date.
+            // Filing a reimbursement does not pre-assign it to a payroll period.
+            $filedReimbursements = \App\Models\EmployeeReimbursement::where('user_id', $user->id)
+                ->whereDate('filed_date', '>=', \Carbon\Carbon::parse($period->date_from)->toDateString())
+                ->whereDate('filed_date', '<=', \Carbon\Carbon::parse($period->date_to)->toDateString())
+                ->whereNull('payroll_id')->get();
+            foreach ($filedReimbursements as $reimbursement) {
+                \App\Http\Controllers\EmployeeReimbursementController::addToPayroll($reimbursement, $payroll);
+            }
 
             /*
             |--------------------------------------------------------------------------
