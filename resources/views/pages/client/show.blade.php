@@ -94,14 +94,6 @@
         </div>
 
 
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center"><strong>Companies under this Client</strong><a class="btn btn-sm btn-primary" href="{{ route('clients.companies.create', $client) }}"><i class="fa fa-plus"></i> Add Company</a></div>
-            <div class="card-body p-0"><table class="table table-bordered table-hover mb-0"><thead class="thead-light"><tr><th>Company</th><th>Status</th><th>Assigned Branches</th><th>Actions</th></tr></thead><tbody>
-            @forelse($client->companies as $listedCompany)
-                <tr><td>{{ $listedCompany->name }}</td><td>@if($listedCompany->active)<span class="badge badge-success">Active</span>@else<span class="badge badge-secondary">Inactive</span>@endif</td><td>{{ $listedCompany->branches()->count() }}</td><td><a class="btn btn-sm btn-warning" href="{{ route('clients.companies.edit', [$client,$listedCompany]) }}">Edit</a><form class="d-inline" method="POST" action="{{ route('clients.companies.destroy', [$client,$listedCompany]) }}" onsubmit="return confirm('Delete this Company?')">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Delete</button></form></td></tr>
-            @empty<tr><td colspan="4" class="text-center text-muted">No companies have been added to this Client.</td></tr>@endforelse
-            </tbody></table></div>
-        </div>
 
         <div class="card mb-4">
                 <div class="card-header"><strong>Branch Operating Calendar</strong></div>
@@ -111,17 +103,85 @@
                 </div>
         </div>
 
-        {{-- Area / Branch / Guards --}}
-        <div class="row">
-
-            <div class="col-lg-5 mb-3">
+        {{-- Areas appear on the left, Companies on the right; Branches use the full row below. --}}
+        <div class="row align-items-stretch">
+            <div class="col-lg-6 mb-3">
                 @include('pages.client.partials.cards._areas')
             </div>
 
-            <div class="col-lg-7 mb-3">
-                @include('pages.client.partials.cards._branches')
+            <div class="col-lg-6 mb-3">
+                <div class="h-100">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center"><strong>Companies under this Client</strong><a class="btn btn-sm btn-primary" href="{{ route('clients.companies.create', $client) }}"><i class="fa fa-plus"></i> Add Company</a></div>
+            <div class="card-body p-0"><table class="table table-bordered table-hover mb-0"><thead class="thead-light"><tr><th>Company</th><th>Status</th><th>Assigned Branches</th><th>Actions</th></tr></thead><tbody>
+            @forelse($client->companies as $listedCompany)
+                @php
+                    $branchCountsByArea = $listedCompany->branches
+                        ->groupBy(function ($branch) {
+                            return optional($branch->area)->name ?: 'Area not assigned';
+                        })
+                        ->map(function ($branches) { return $branches->count(); });
+                    $companyBranchCount = $listedCompany->branches->count();
+                @endphp
+                <tr>
+                    <td>{{ $listedCompany->name }}</td>
+                    <td>@if($listedCompany->active)<span class="badge badge-success">Active</span>@else<span class="badge badge-secondary">Inactive</span>@endif</td>
+                    <td>
+                        <span class="font-weight-bold">{{ $companyBranchCount }}</span>
+                        <button type="button" class="btn btn-sm btn-link p-0 ml-2" data-toggle="modal" data-target="#companyAreaBranches{{ $listedCompany->id }}" {{ $companyBranchCount ? '' : 'disabled' }}>
+                            View by Area
+                        </button>
+                    </td>
+                    <td><a class="btn btn-sm btn-warning" href="{{ route('clients.companies.edit', [$client,$listedCompany]) }}">Edit</a><form class="d-inline" method="POST" action="{{ route('clients.companies.destroy', [$client,$listedCompany]) }}" onsubmit="return confirm('Delete this Company?')">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Delete</button></form></td>
+                </tr>
+            @empty<tr><td colspan="4" class="text-center text-muted">No companies have been added to this Client.</td></tr>@endforelse
+            </tbody></table></div>
+        </div>
+
+        @foreach($client->companies as $listedCompany)
+            @php
+                $branchCountsByArea = $listedCompany->branches
+                    ->groupBy(function ($branch) {
+                        return optional($branch->area)->name ?: 'Area not assigned';
+                    })
+                    ->map(function ($branches) { return $branches->count(); });
+            @endphp
+            <div class="modal fade" id="companyAreaBranches{{ $listedCompany->id }}" tabindex="-1" role="dialog" aria-labelledby="companyAreaBranchesLabel{{ $listedCompany->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="companyAreaBranchesLabel{{ $listedCompany->id }}">{{ $listedCompany->name }} — Branches by Area</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body">
+                            @if($branchCountsByArea->isEmpty())
+                                <p class="text-muted mb-0">No branches are currently assigned to this company.</p>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="thead-light"><tr><th>Area</th><th class="text-center" style="width: 110px;">Branches</th></tr></thead>
+                                        <tbody>
+                                            @foreach($branchCountsByArea as $areaName => $branchCount)
+                                                <tr><td>{{ $areaName }}</td><td class="text-center font-weight-bold">{{ $branchCount }}</td></tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot><tr><th>Total</th><th class="text-center">{{ $listedCompany->branches->count() }}</th></tr></tfoot>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+
+                </div>
             </div>
 
+            <div class="col-12 mb-3">
+                @include('pages.client.partials.cards._branches')
+            </div>
         </div>
 
     </div>
