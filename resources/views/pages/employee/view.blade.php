@@ -1,16 +1,31 @@
 @extends('layout.master')
 
 @push('plugin-styles')
+    <style>
+        .employee-index-page { max-width: 100%; }
+        .employee-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        #employees-table { min-width: 1050px; }
+        .employee-page-header { gap: 10px; }
+        @media (max-width: 1024px) {
+            .employee-index-page { padding-left: 12px; padding-right: 12px; }
+            .employee-page-header h3 { font-size: 1.35rem; }
+            .employee-index-page .card-body { padding: 14px; }
+        }
+        @media (max-width: 767.98px) {
+            .employee-page-header { align-items: flex-start !important; }
+            .employee-page-header .btn { margin-left: auto; }
+        }
+    </style>
     <!-- {!! Html::style('/assets/plugins/plugin.css') !!} -->
 @endpush
 
 @section('content')
 
-    <div class="container">
+    <div class="container-fluid employee-index-page">
 
-        <div class="d-flex justify-content-between mb-3">
-            <h3>Employees</h3>
-            <a href="{{ route('hr.employee.create') }}" class="btn btn-success">Add Employee</a>
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 employee-page-header">
+            <h3 class="mb-2 mb-md-0">Employees</h3>
+            <a href="{{ route('hr.employee.create') }}" class="btn btn-success mb-2">Add Employee</a>
         </div>
 
         <div class="card mb-3">
@@ -19,7 +34,7 @@
 
                 <div class="row">
 
-                    <div class="col-md-3">
+                    <div class="col-12 col-sm-6 col-lg-3 mb-3">
 
                         <label>Position</label>
 
@@ -35,7 +50,7 @@
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-12 col-sm-6 col-lg-3 mb-3">
 
                         <label>Branch</label>
 
@@ -57,7 +72,7 @@
 
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-12 col-sm-6 col-lg-2 mb-3">
 
                         <label>Age From</label>
 
@@ -68,7 +83,7 @@
 
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-12 col-sm-6 col-lg-2 mb-3">
 
                         <label>Age To</label>
 
@@ -79,7 +94,7 @@
 
                     </div>
 
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-12 col-sm-6 col-lg-2 d-flex align-items-end mb-3">
 
                         <button
                             class="btn btn-primary btn-block"
@@ -97,7 +112,8 @@
 
         </div>
 
-        <table class="table table-bordered table-striped" id="employees-table">
+        <div class="table-responsive employee-table-wrap">
+        <table class="table table-bordered table-striped w-100" id="employees-table">
             <thead>
             <tr>
                 <th>#</th>
@@ -113,6 +129,7 @@
             </tr>
             </thead>
         </table>
+        </div>
 
     </div>
 
@@ -128,6 +145,8 @@
 
                 processing:true,
                 serverSide:true,
+                scrollX:true,
+                autoWidth:false,
 
                 ajax:{
                     url:"{{ route('hr.employee.index') }}",

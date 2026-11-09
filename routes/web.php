@@ -195,6 +195,14 @@ Route::group(['middleware' => ['auth']], function () {
         [\App\Http\Controllers\PayrollController::class, 'markPaid']
     )->name('payrolls.mark-paid');
 
+    // Employee allowances (agency-funded payroll earnings)
+    Route::get('allowances', [\App\Http\Controllers\AllowanceController::class, 'index'])->name('allowances.index');
+    Route::post('allowances/types', [\App\Http\Controllers\AllowanceController::class, 'storeType'])->name('allowances.types.store');
+    Route::post('allowances/types/{allowanceType}/toggle', [\App\Http\Controllers\AllowanceController::class, 'toggleType'])->name('allowances.types.toggle');
+    Route::get('allowances/assign', [\App\Http\Controllers\AllowanceController::class, 'create'])->name('allowances.create');
+    Route::post('allowances/assign', [\App\Http\Controllers\AllowanceController::class, 'store'])->name('allowances.store');
+    Route::post('allowances/{employeeAllowance}/toggle', [\App\Http\Controllers\AllowanceController::class, 'toggle'])->name('allowances.toggle');
+
     // Fixed employee deductions (separate from loans)
     Route::resource('employee-deductions', EmployeeDeductionController::class)
         ->only(['index', 'create', 'store', 'show']);

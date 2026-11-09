@@ -110,6 +110,10 @@
                       <a class="nav-link" href="{{ route('employee-deductions.index') }}">Deductions</a>
                   </li>
 
+                  <li class="nav-item {{ active_class(['allowances*']) }}">
+                      <a class="nav-link" href="{{ route('allowances.index') }}">Allowances</a>
+                  </li>
+
               </ul>
           </div>
       </li>

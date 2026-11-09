@@ -1,28 +1,29 @@
 <div class="card">
 
-    <div class="card-header d-flex justify-content-between align-items-center">
-
-        <strong style="font-size:1.1rem;">Areas</strong>
-
-        <div>
-
-            <button type="button" class="btn btn-info btn-sm" id="btnViewAreaGuards">
-                <i class="fa fa-users"></i> View Guards
-            </button>
-
-            {{-- Create Area --}}
-            <button type="button"
-                    class="btn btn-primary btn-sm"
-                    data-toggle="modal"
-                    data-target="#areaModal">
-
-                <i class="fa fa-plus"></i>
-                Create
-
-            </button>
-
+    <div class="card-header area-card-header">
+        <div class="area-toolbar-top" style="display:flex !important; flex-direction:row !important; align-items:center !important; justify-content:space-between !important; width:100% !important; gap:12px !important;">
+            <strong class="area-card-title">Areas</strong>
+            <div class="area-card-actions" style="display:flex !important; flex-direction:row !important; align-items:center !important; justify-content:flex-end !important; gap:8px !important; margin-left:auto !important; flex:0 0 auto !important; white-space:nowrap !important;">
+                <button type="button" class="btn btn-info btn-sm" id="btnViewAreaGuards">
+                    <i class="fa fa-users"></i> View Guards
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#areaModal">
+                    <i class="fa fa-plus"></i> Create
+                </button>
+            </div>
         </div>
 
+        <div class="area-search-row" style="margin-top:10px !important;">
+            <div class="area-search-controls client-search-controls" style="display:flex !important; flex-flow:row nowrap !important; align-items:center !important; gap:8px !important; width:100% !important; min-width:0 !important;">
+                <div class="area-search-input-wrap client-search-input-wrap" style="position:relative !important; display:block !important; flex:1 1 0% !important; width:auto !important; min-width:0 !important;">
+                    <i class="fa fa-search area-search-icon" aria-hidden="true"></i>
+                    <input type="search" class="form-control form-control-sm" id="areaSearch"
+                           placeholder="Search areas..." aria-label="Search areas" autocomplete="off">
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm area-search-clear client-search-clear" style="position:static !important; display:inline-flex !important; flex:0 0 64px !important; width:64px !important; min-width:64px !important; max-width:64px !important; height:36px !important; margin:0 !important; align-items:center !important; justify-content:center !important; white-space:nowrap !important;" id="clearAreaSearch">Clear</button>
+            </div>
+            <small class="text-muted area-search-hint" id="areaSearchHint">{{ $company->areas->count() }} area(s).</small>
+        </div>
     </div>
 
     <div class="card-body p-0">
@@ -148,4 +149,5 @@
     #client-areas-table .client-action-column { width: 20%; }
     #client-areas-table th, #client-areas-table td { padding: .45rem .4rem; }
 }
+
 </style>

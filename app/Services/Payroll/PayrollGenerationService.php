@@ -313,6 +313,17 @@ class PayrollGenerationService
 
             /*
             |--------------------------------------------------------------------------
+            | Agency-funded employee allowances
+            |--------------------------------------------------------------------------
+            | The configured amount represents a full payroll-period amount.
+            | It is prorated using attended scheduled DTR days divided by
+            | eligible scheduled DTR days, after the employee's hire date.
+            | Allowances are payroll earnings only; no billing records are made.
+            */
+            $this->applyEmployeeAllowances($user, $period, $payroll, $dtrs);
+
+            /*
+            |--------------------------------------------------------------------------
             | Deductions
             |--------------------------------------------------------------------------
             */
@@ -487,6 +498,80 @@ class PayrollGenerationService
                 'payroll_id' => $payroll->id
             ]);
         });
+    }
+
+    /** Apply active employee allowances as prorated earning items. */
+    protected function applyEmployeeAllowances(User $user, PayrollPeriod $period, Payroll $payroll, $dtrs)
+    {
+        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
+        $hireDate = $user->date_hired ? \Carbon\Carbon::parse($user->date_hired)->startOfDay() : null;
+
+        $eligibleDtrs = $dtrs->filter(function ($dtr) use ($hireDate) {
+            $date = \Carbon\Carbon::parse($dtr->work_date)->startOfDay();
+            return (!$hireDate || $date->greaterThanOrEqualTo($hireDate))
+                && !(bool) $dtr->is_rest_day
+                && (float) ($dtr->scheduled_hours ?? 0) > 0;
+        });
+        $eligibleDays = $eligibleDtrs->count();
+        if ($eligibleDays < 1) {
+            return;
+        }
+
+        $workedDays = $eligibleDtrs->filter(function ($dtr) {
+            return ($dtr->time_in && $dtr->time_out) || (float) ($dtr->total_hours ?? 0) > 0;
+        })->count();
+        if ($workedDays < 1) {
+            return;
+        }
+
+        $assignments = \App\Models\EmployeeAllowance::with('allowanceType')
+            ->where('user_id', $user->id)
+            ->where('status', 'Active')
+            ->whereDate('effective_from', '<=', $periodEnd->toDateString())
+            ->where(function ($query) use ($periodStart) {
+                $query->whereNull('effective_to')
+                    ->orWhereDate('effective_to', '>=', $periodStart->toDateString());
+            })->get();
+
+        foreach ($assignments as $assignment) {
+            if (!$assignment->allowanceType || !$assignment->allowanceType->is_active) {
+                continue;
+            }
+
+            // The payroll-period amount is prorated for employment dates too.
+            $assignmentStart = \Carbon\Carbon::parse($assignment->effective_from)->startOfDay();
+            $assignmentEnd = $assignment->effective_to
+                ? \Carbon\Carbon::parse($assignment->effective_to)->endOfDay()
+                : $periodEnd->copy();
+            $activeEligible = $eligibleDtrs->filter(function ($dtr) use ($assignmentStart, $assignmentEnd) {
+                $date = \Carbon\Carbon::parse($dtr->work_date)->startOfDay();
+                return $date->greaterThanOrEqualTo($assignmentStart) && $date->lessThanOrEqualTo($assignmentEnd);
+            });
+            $activeEligibleDays = $activeEligible->count();
+            if ($activeEligibleDays < 1) {
+                continue;
+            }
+            $activeWorkedDays = $activeEligible->filter(function ($dtr) {
+                return ($dtr->time_in && $dtr->time_out) || (float) ($dtr->total_hours ?? 0) > 0;
+            })->count();
+            if ($activeWorkedDays < 1) {
+                continue;
+            }
+
+            $amount = round((float) $assignment->amount * ($activeWorkedDays / $eligibleDays), 2);
+            if ($amount <= 0) {
+                continue;
+            }
+            \App\Services\PayrollItemService::earning(
+                $payroll,
+                'ALW-' . $assignment->id,
+                $assignment->allowanceType->name . ' Allowance (' . $activeWorkedDays . '/' . $eligibleDays . ' eligible days)',
+                $amount,
+                $activeWorkedDays,
+                round((float) $assignment->amount / $eligibleDays, 2)
+            );
+        }
     }
 
     /**
