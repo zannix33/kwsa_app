@@ -176,14 +176,7 @@ class PayrollGenerationService
                 'dtr_ids' => $dtrs->pluck('id')->all(),
             ]);
 
-            // Match reimbursements to this payroll period at processing time using filed_date.
-            // Filing a reimbursement does not pre-assign it to a payroll period.
-            $filedReimbursements = \App\Models\EmployeeReimbursement::where('user_id', $user->id)
-                ->whereDate('filed_date', '>=', \Carbon\Carbon::parse($period->date_from)->toDateString())
-                ->whereDate('filed_date', '<=', \Carbon\Carbon::parse($period->date_to)->toDateString())
-                ->whereNull('payroll_id')->get();
-
-            if ($dtrs->isEmpty() && $filedReimbursements->isEmpty()) {
+            if ($dtrs->isEmpty()) {
                 return;
             }
 
@@ -193,11 +186,10 @@ class PayrollGenerationService
             |--------------------------------------------------------------------------
             */
 
-            $result = $dtrs->isEmpty() ? [
-                'rate_breakdown' => [],
-                'earnings' => ['overall_pay' => 0],
-                'deductions' => ['late' => 0, 'undertime' => 0, 'CB' => 0],
-            ] : $this->calculator->calculate($user, $dtrs);
+            $result = $this->calculator->calculate(
+                $user,
+                $dtrs
+            );
 
             /*
             |--------------------------------------------------------------------------
@@ -256,7 +248,7 @@ class PayrollGenerationService
                         'Regular Overtime (' . $rateLabel . ')',
                         $breakdown['regular_overtime_pay'],
                         $breakdown['overtime_hours'],
-                        $breakdown['regular_overtime_rate']
+                        $breakdown['hourly_rate'] * 1.25
                     );
                 }
 
@@ -268,7 +260,7 @@ class PayrollGenerationService
                         'Special Overtime (' . $rateLabel . ')',
                         $breakdown['special_overtime_pay'],
                         $breakdown['special_overtime_hours'],
-                        $breakdown['special_overtime_rate']
+                        $breakdown['hourly_rate'] * 1.69
                     );
                 }
 
@@ -280,7 +272,7 @@ class PayrollGenerationService
                         'Regular Holiday Overtime (' . $rateLabel . ')',
                         $breakdown['regular_holiday_overtime_pay'],
                         $breakdown['regular_holiday_overtime_hours'],
-                        $breakdown['regular_holiday_overtime_rate']
+                        $breakdown['hourly_rate'] * 2.60
                     );
                 }
 
@@ -292,7 +284,7 @@ class PayrollGenerationService
                         'Night Differential (' . $rateLabel . ')',
                         $breakdown['night_diff_pay'],
                         $breakdown['night_diff_hours'],
-                        $breakdown['night_diff_rate']
+                        $breakdown['hourly_rate'] * 0.10
                     );
                 }
 
@@ -318,28 +310,6 @@ class PayrollGenerationService
             }
 
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Agency-funded employee allowances
-            |--------------------------------------------------------------------------
-            | The configured amount represents a full payroll-period amount.
-            | It is prorated using attended scheduled DTR days divided by
-            | eligible scheduled DTR days, after the employee's hire date.
-            | Allowances are payroll earnings only; no billing records are made.
-            */
-            $this->applyEmployeeAllowances($user, $period, $payroll, $dtrs);
-
-            // Reimbursements are automatically eligible based on filing date and are not prorated.
-            // Match reimbursements to this payroll period at processing time using filed_date.
-            // Filing a reimbursement does not pre-assign it to a payroll period.
-            $filedReimbursements = \App\Models\EmployeeReimbursement::where('user_id', $user->id)
-                ->whereDate('filed_date', '>=', \Carbon\Carbon::parse($period->date_from)->toDateString())
-                ->whereDate('filed_date', '<=', \Carbon\Carbon::parse($period->date_to)->toDateString())
-                ->whereNull('payroll_id')->get();
-            foreach ($filedReimbursements as $reimbursement) {
-                \App\Http\Controllers\EmployeeReimbursementController::addToPayroll($reimbursement, $payroll);
-            }
 
             /*
             |--------------------------------------------------------------------------
@@ -370,118 +340,57 @@ class PayrollGenerationService
 
             /*
             |--------------------------------------------------------------------------
-            | Government Contributions
+            | Government Contributions: Independent 7-Day Rule Per Payroll
             |--------------------------------------------------------------------------
             */
 
-            // Keep the existing SSS calculation unchanged.
-            $sss = SSSService::compute(
-                $result['earnings']['overall_pay']
-            );
+            $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
+            $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
 
-            $pagibigRate = PayrollRate::where('slug', 'pagibig')
-                ->firstOrFail()
-                ->rate;
-
-            $philhealthRate = PayrollRate::where('slug', 'philhealth')
-                ->firstOrFail()
-                ->rate;
-
-            // SSS remains deducted in both payroll periods.
-            PayrollItemService::deduction(
-                $payroll,
-                'SSS',
-                'SSS Contribution',
-                $sss
-            );
-
-            /*
-            |--------------------------------------------------------------------------
-            | PhilHealth and Pag-IBIG: 7-Day First-Half Rule
-            |--------------------------------------------------------------------------
-            */
-
-            $periodStart = \Carbon\Carbon::parse($period->date_from);
-            $periodEnd = \Carbon\Carbon::parse($period->date_to);
-
-            $year = $periodStart->year;
-            $month = $periodStart->month;
-
-            // Determine whether this is the first or second half.
-            $isFirstHalf = $periodStart->day <= 15
-                && $periodEnd->day <= 15;
-
-            $isSecondHalf = $periodStart->day >= 16;
-
-            // Count distinct DTR work dates from the 1st through the 15th.
-            // Include DTRs already assigned to a payroll.
-            $firstHalfDaysWorked = DailyTimeRecord::where(
-                'user_id',
-                $user->id
-            )
-                ->whereYear('work_date', $year)
-                ->whereMonth('work_date', $month)
-                ->whereDay('work_date', '<=', 15)
+            // Count distinct DTR dates only within this payroll period.
+            // There is no carryover between the first and second payrolls.
+            $daysWorkedInPeriod = DailyTimeRecord::where('user_id', $user->id)
+                ->whereBetween('work_date', [
+                    $periodStart->toDateString(),
+                    $periodEnd->toDateString(),
+                ])
                 ->distinct()
                 ->count('work_date');
 
-            // First half: deduct only if at least 7 days were worked.
-            // Second half: deduct if it has not already been deducted.
-            $shouldDeductMonthlyContributions = false;
+            if ($daysWorkedInPeriod >= 7) {
+                $sss = SSSService::compute(
+                    $result['earnings']['overall_pay']
+                );
 
-            if ($isFirstHalf && $firstHalfDaysWorked >= 7) {
-                $shouldDeductMonthlyContributions = true;
+                $pagibigRate = PayrollRate::where('slug', 'pagibig')
+                    ->firstOrFail()
+                    ->rate;
+
+                $philhealthRate = PayrollRate::where('slug', 'philhealth')
+                    ->firstOrFail()
+                    ->rate;
+
+                PayrollItemService::deduction(
+                    $payroll,
+                    'SSS',
+                    'SSS Contribution',
+                    $sss
+                );
+
+                PayrollItemService::deduction(
+                    $payroll,
+                    'PHIC',
+                    'PhilHealth Contribution',
+                    $philhealthRate
+                );
+
+                PayrollItemService::deduction(
+                    $payroll,
+                    'PAGIBIG',
+                    'PagIBIG Contribution',
+                    $pagibigRate
+                );
             }
-
-            if ($isSecondHalf) {
-                $shouldDeductMonthlyContributions = true;
-            }
-
-            if ($shouldDeductMonthlyContributions) {
-
-                foreach ([
-                             'PHIC' => [
-                                 'description' => 'PhilHealth Contribution',
-                                 'amount' => $philhealthRate,
-                             ],
-                             'PAGIBIG' => [
-                                 'description' => 'PagIBIG Contribution',
-                                 'amount' => $pagibigRate,
-                             ],
-                         ] as $code => $contribution) {
-
-                    // Check whether this contribution already exists
-                    // in any payroll for this employee in the same month.
-                    $alreadyDeducted = DB::table('payroll_items')
-                        ->join(
-                            'payrolls',
-                            'payroll_items.payroll_id',
-                            '=',
-                            'payrolls.id'
-                        )
-                        ->join(
-                            'payroll_periods',
-                            'payrolls.payroll_period_id',
-                            '=',
-                            'payroll_periods.id'
-                        )
-                        ->where('payrolls.user_id', $user->id)
-                        ->where('payroll_items.code', $code)
-                        ->whereYear('payroll_periods.date_from', $year)
-                        ->whereMonth('payroll_periods.date_from', $month)
-                        ->exists();
-
-                    if (!$alreadyDeducted) {
-                        PayrollItemService::deduction(
-                            $payroll,
-                            $code,
-                            $contribution['description'],
-                            $contribution['amount']
-                        );
-                    }
-                }
-            }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -495,9 +404,6 @@ class PayrollGenerationService
                 $period,
                 $payroll
             );
-
-            // Fixed employee deductions are independent of loan schedules.
-            $this->applyFixedEmployeeDeductions($user, $period, $payroll);
 
             // Recalculate payroll after all deductions are added.
             PayrollItemService::recalculate(
@@ -519,151 +425,6 @@ class PayrollGenerationService
         });
     }
 
-    /** Apply active employee allowances as prorated earning items. */
-    protected function applyEmployeeAllowances(User $user, PayrollPeriod $period, Payroll $payroll, $dtrs)
-    {
-        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
-        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
-        $hireDate = $user->date_hired ? \Carbon\Carbon::parse($user->date_hired)->startOfDay() : null;
-
-        $eligibleDtrs = $dtrs->filter(function ($dtr) use ($hireDate) {
-            $date = \Carbon\Carbon::parse($dtr->work_date)->startOfDay();
-            return (!$hireDate || $date->greaterThanOrEqualTo($hireDate))
-                && !(bool) $dtr->is_rest_day
-                && (float) ($dtr->scheduled_hours ?? 0) > 0;
-        });
-        $eligibleDays = $eligibleDtrs->count();
-        if ($eligibleDays < 1) {
-            return;
-        }
-
-        $workedDays = $eligibleDtrs->filter(function ($dtr) {
-            return ($dtr->time_in && $dtr->time_out) || (float) ($dtr->total_hours ?? 0) > 0;
-        })->count();
-        if ($workedDays < 1) {
-            return;
-        }
-
-        $assignments = \App\Models\EmployeeAllowance::with('allowanceType')
-            ->where('user_id', $user->id)
-            ->where('status', 'Active')
-            ->whereDate('effective_from', '<=', $periodEnd->toDateString())
-            ->where(function ($query) use ($periodStart) {
-                $query->whereNull('effective_to')
-                    ->orWhereDate('effective_to', '>=', $periodStart->toDateString());
-            })->get();
-
-        foreach ($assignments as $assignment) {
-            if (!$assignment->allowanceType || !$assignment->allowanceType->is_active) {
-                continue;
-            }
-
-            // The payroll-period amount is prorated for employment dates too.
-            $assignmentStart = \Carbon\Carbon::parse($assignment->effective_from)->startOfDay();
-            $assignmentEnd = $assignment->effective_to
-                ? \Carbon\Carbon::parse($assignment->effective_to)->endOfDay()
-                : $periodEnd->copy();
-            $activeEligible = $eligibleDtrs->filter(function ($dtr) use ($assignmentStart, $assignmentEnd) {
-                $date = \Carbon\Carbon::parse($dtr->work_date)->startOfDay();
-                return $date->greaterThanOrEqualTo($assignmentStart) && $date->lessThanOrEqualTo($assignmentEnd);
-            });
-            $activeEligibleDays = $activeEligible->count();
-            if ($activeEligibleDays < 1) {
-                continue;
-            }
-            $activeWorkedDays = $activeEligible->filter(function ($dtr) {
-                return ($dtr->time_in && $dtr->time_out) || (float) ($dtr->total_hours ?? 0) > 0;
-            })->count();
-            if ($activeWorkedDays < 1) {
-                continue;
-            }
-
-            $amount = round((float) $assignment->amount * ($activeWorkedDays / $eligibleDays), 2);
-            if ($amount <= 0) {
-                continue;
-            }
-            \App\Services\PayrollItemService::earning(
-                $payroll,
-                'ALW-' . $assignment->id,
-                $assignment->allowanceType->name . ' Allowance (' . $activeWorkedDays . '/' . $eligibleDays . ' eligible days)',
-                $amount,
-                $activeWorkedDays,
-                round((float) $assignment->amount / $eligibleDays, 2)
-            );
-        }
-    }
-
-    /**
-     * Apply fixed employee deductions automatically to the matching payroll.
-     * A configured count of zero means unlimited until manually marked paid or inactive.
-     */
-    protected function applyFixedEmployeeDeductions(User $user, PayrollPeriod $period, Payroll $payroll)
-    {
-        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
-        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
-
-        $schedules = \App\Models\EmployeeDeduction::where('user_id', $user->id)
-            ->where('status', 'Active')->get();
-
-        foreach ($schedules as $schedule) {
-            $effectiveDate = \Carbon\Carbon::parse($schedule->start_date)->startOfDay();
-            if ($periodEnd->lt($effectiveDate)) {
-                continue;
-            }
-            if ($schedule->end_date && $periodStart->gt(\Carbon\Carbon::parse($schedule->end_date)->endOfDay())) {
-                continue;
-            }
-
-            // Monthly schedules run only on the selected semi-monthly cutoff.
-            if ($schedule->frequency === 'monthly') {
-                $cutoffDay = (int) $periodStart->day;
-                $matchesCutoff = $schedule->monthly_cutoff === 'first'
-                    ? ($cutoffDay >= 1 && $cutoffDay <= 15)
-                    : ($cutoffDay >= 16);
-                if (!$matchesCutoff) {
-                    continue;
-                }
-            }
-
-            // Count both pending applications and completed deductions so that
-            // payrolls generated ahead of approval cannot exceed the configured count.
-            $existingApplications = \App\Models\EmployeeDeductionPeriod::where('employee_deduction_id', $schedule->id);
-            $applicationCount = (clone $existingApplications)->count();
-
-            if ($schedule->frequency === 'one_time' && $applicationCount > 0) {
-                continue;
-            }
-            if ((int) $schedule->installment_count > 0 && $applicationCount >= (int) $schedule->installment_count) {
-                continue;
-            }
-
-            $application = \App\Models\EmployeeDeductionPeriod::firstOrCreate(
-                ['employee_deduction_id' => $schedule->id, 'payroll_period_id' => $period->id],
-                ['amount' => $schedule->amount, 'status' => 'Scheduled']
-            );
-
-            if (!$application->wasRecentlyCreated || $application->status !== 'Scheduled') {
-                continue;
-            }
-
-            $alreadyOnPayroll = $payroll->items()->where('code', 'FIXEDDED_' . $schedule->id)->exists();
-            if (!$alreadyOnPayroll) {
-                PayrollItemService::deduction(
-                    $payroll,
-                    'FIXEDDED_' . $schedule->id,
-                    $schedule->description,
-                    (float) $schedule->amount
-                );
-            }
-
-            // Mark as processed only when the associated payroll is marked Paid.
-            $application->update([
-                'payroll_id' => $payroll->id,
-                'amount' => $schedule->amount,
-            ]);
-        }
-    }
-
     /**
      * Apply semi-monthly loan deductions to payroll.
      */
@@ -673,38 +434,42 @@ class PayrollGenerationService
         Payroll $payroll
     ) {
 
-        $periodStart = \Carbon\Carbon::parse($period->date_from)->startOfDay();
-        $periodEnd = \Carbon\Carbon::parse($period->date_to)->endOfDay();
+        $periodEnd = \Carbon\Carbon::parse($period->date_to);
 
-        // Payroll periods are semi-monthly: 1st-15th and 16th-end.
-        $isFirstPayroll = $periodStart->day <= 15 && $periodEnd->day <= 15;
-        $isSecondPayroll = $periodStart->day >= 16;
+        if ($periodEnd->day < 16) {
+            return;
+        }
 
         // Must run inside the transaction used to generate this payroll.
         $loans = Loan::where('user_id', $user->id)
             ->where('status', 'Active')
             ->where('outstanding_balance', '>', 0)
-            ->whereDate('deduction_start_date', '<=', $period->date_to)
+            ->whereDate(
+                'deduction_start_date',
+                '<=',
+                $period->date_to
+            )
             ->where(function ($query) use ($period) {
                 $query->whereNull('deduction_end_date')
-                    ->orWhereDate('deduction_end_date', '>=', $period->date_from);
+                    ->orWhereDate(
+                        'deduction_end_date',
+                        '>=',
+                        $period->date_from
+                    );
             })
             ->lockForUpdate()
             ->get();
 
         foreach ($loans as $loan) {
-            $deductionStartDate = \Carbon\Carbon::parse($loan->deduction_start_date);
 
-            // The start-date day selects the recurring monthly cutoff:
-            // 1-15 => first payroll; 16-end => second payroll.
-            $loanStartsInFirstHalf = $deductionStartDate->day <= 15;
-            if (($loanStartsInFirstHalf && !$isFirstPayroll) ||
-                (!$loanStartsInFirstHalf && !$isSecondPayroll)) {
-                continue;
-            }
+            $periodStart = \Carbon\Carbon::parse($period->date_from);
+            $periodEnd = \Carbon\Carbon::parse($period->date_to);
 
-            // Only one installment per loan per calendar month.
-            $alreadyPaidThisMonth = LoanPayment::where('loan_id', $loan->id)
+            // Has this loan already been paid in the same calendar month?
+            $alreadyPaidThisMonth = LoanPayment::where(
+                'loan_id',
+                $loan->id
+            )
                 ->whereYear('payment_date', $periodEnd->year)
                 ->whereMonth('payment_date', $periodEnd->month)
                 ->exists();
@@ -712,8 +477,7 @@ class PayrollGenerationService
             if ($alreadyPaidThisMonth) {
                 continue;
             }
-
-            // Keep the unique loan/payroll-period guard as a second safeguard.
+            // Do not record the same loan twice for this payroll period.
             $alreadyPaid = LoanPayment::where('loan_id', $loan->id)
                 ->where('payroll_period_id', $period->id)
                 ->exists();
@@ -724,7 +488,11 @@ class PayrollGenerationService
 
             $monthlyAmortization = (float) $loan->monthly_amortization;
             $outstandingBalance = (float) $loan->outstanding_balance;
-            $deductionAmount = round(min($monthlyAmortization, $outstandingBalance), 2);
+
+            $deductionAmount = round(
+                min($monthlyAmortization, $outstandingBalance),
+                2
+            );
 
             if ($deductionAmount <= 0) {
                 continue;
@@ -735,18 +503,23 @@ class PayrollGenerationService
                     $code = 'SSS_LOAN';
                     $description = 'SSS Loan Repayment';
                     break;
+
                 case 'Pag-IBIG':
                     $code = 'PAGIBIG_LOAN';
                     $description = 'Pag-IBIG Loan Repayment';
                     break;
+
                 case 'Company':
                     $code = 'COMPANY_LOAN';
                     $description = 'Company Loan Repayment';
                     break;
+
                 default:
+                    // Ignore unknown providers rather than misclassify them.
                     continue 2;
             }
 
+            // Add the deduction to this payroll.
             PayrollItemService::deduction(
                 $payroll,
                 $code,
@@ -754,6 +527,7 @@ class PayrollGenerationService
                 $deductionAmount
             );
 
+            // Record the repayment against this payroll period.
             LoanPayment::create([
                 'loan_id' => $loan->id,
                 'payroll_period_id' => $period->id,
@@ -762,16 +536,27 @@ class PayrollGenerationService
                 'payment_method' => 'Payroll',
             ]);
 
-            $newTotalPaid = round((float) $loan->total_paid + $deductionAmount, 2);
-            $newBalance = round(max(0, $outstandingBalance - $deductionAmount), 2);
+            // Update the loan balance.
+            $newTotalPaid = round(
+                (float) $loan->total_paid + $deductionAmount,
+                2
+            );
+
+            $newBalance = round(
+                max(0, $outstandingBalance - $deductionAmount),
+                2
+            );
 
             $loan->update([
                 'total_paid' => $newTotalPaid,
                 'outstanding_balance' => $newBalance,
-                'status' => $newBalance <= 0 ? 'Fully Paid' : 'Active',
+                'status' => $newBalance <= 0
+                    ? 'Fully Paid'
+                    : 'Active',
             ]);
         }
     }
+
 
     public function generate13thMonth($areaId,$from,$to)
     {
@@ -828,9 +613,6 @@ class PayrollGenerationService
                 $basicSalary=0;
 
                 foreach($dtrs as $dtr){
-
-
-
 
                     $hours += $dtr->regular_hours;
 
