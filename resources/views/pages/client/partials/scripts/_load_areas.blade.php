@@ -57,6 +57,8 @@
     |--------------------------------------------------------------------------
     | Loads all Areas belonging to the current Company.
     */
+    var loadedClientAreas = [];
+
     function loadAreas(selectedId = null)
     {
         setAreaSearchHint('Loading areas...');
@@ -70,6 +72,7 @@
             dataType: "json",
 
             success: function(areas) {
+                loadedClientAreas = areas || [];
                 let html = '';
 
                 if (areas.length === 0) {

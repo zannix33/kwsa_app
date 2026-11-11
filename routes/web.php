@@ -112,6 +112,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('/branches/{branch}', [\App\Http\Controllers\BranchController::class, 'destroy'])
         ->name('branches.destroy');
 
+    Route::put('/branches/{branch}/move-area', [\App\Http\Controllers\BranchController::class, 'moveToArea'])
+        ->name('branches.move.area');
+
     Route::get('/branches/{branch}/guards', [\App\Http\Controllers\BranchController::class, 'guards']);
 
     Route::get('/branches/{branch}/available-guards', [\App\Http\Controllers\BranchController::class, 'availableGuards'])

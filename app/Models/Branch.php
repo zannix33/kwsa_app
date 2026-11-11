@@ -2,8 +2,9 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 class Branch extends Model {
- use HasFactory;
+ use HasFactory, SoftDeletes;
  protected $fillable=['area_id','company_id','name','address','province','baranggay','operation_start','operation_end','operation_saturday_start','operation_saturday_end','operation_sunday_start','operation_sunday_end','is_closed_saturday','is_closed_sunday','assigned_guard_count'];
  public function client(){ return $this->belongsTo(Client::class); }
  public function area(){ return $this->belongsTo(Area::class); }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BranchController extends Controller
 {
@@ -125,30 +126,48 @@ class BranchController extends Controller
     }
 
     /**
-     * Delete Branch.
+     * Soft-delete a branch. Its guards and historical records remain stored.
      */
     public function destroy(Branch $branch)
     {
-        if ($branch->users()->count()) {
-
-            return response()->json([
-
-                'success' => false,
-
-                'message' => 'Cannot delete a Branch with assigned guards.'
-
-            ], 422);
-
-        }
-
         $branch->delete();
 
         return response()->json([
-
             'success' => true,
+            'message' => 'Branch moved to the deleted branches list. Its records have been retained.',
+        ]);
+    }
 
-            'message' => 'Branch deleted successfully.'
+    /**
+     * Move a branch to another area belonging to the same client.
+     * Guard assignments and branch-linked history remain attached to the branch.
+     */
+    public function moveToArea(Request $request, Branch $branch)
+    {
+        $validated = $request->validate([
+            'area_id' => 'required|integer|exists:areas,id',
+        ]);
 
+        $destinationArea = \App\Models\Area::findOrFail($validated['area_id']);
+        $sourceArea = $branch->area;
+
+        abort_unless($sourceArea && $destinationArea->client_id === $sourceArea->client_id, 422,
+            'The destination Area must belong to the same Client.');
+
+        if ($branch->company_id && !\App\Models\Company::where('id', $branch->company_id)
+            ->where('client_id', $destinationArea->client_id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The branch company does not belong to the destination Area client.',
+            ], 422);
+        }
+
+        $branch->area_id = $destinationArea->id;
+        $branch->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Branch moved successfully. Assigned guards and branch-linked records were retained.',
         ]);
     }
 

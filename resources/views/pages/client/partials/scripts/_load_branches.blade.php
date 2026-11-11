@@ -168,6 +168,14 @@
                                 data-is-closed-sunday="${branch.is_closed_sunday ? 1 : 0}">
                                 <i class="fa fa-edit"></i> Edit
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-info btn-move-branch mt-1"
+                                data-id="${branch.id}" data-name="${escapeHtml(branch.name ?? '')}" data-area-id="${areaId}">
+                                <i class="fa fa-exchange-alt"></i> Move
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-branch mt-1"
+                                data-id="${branch.id}" data-name="${escapeHtml(branch.name ?? '')}">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
                         </td>
                     </tr>
 

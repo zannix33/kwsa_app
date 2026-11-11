@@ -191,6 +191,7 @@
     @include('pages.client.partials.modals._area_modal')
 
     @include('pages.client.partials.modals._branch_modal')
+    @include('pages.client.partials.modals._move_branch_modal')
 
     @include('pages.client.partials.modals._assign_area_guard_modal')
 
@@ -250,6 +251,7 @@
     @include('pages.client.partials.scripts._branch_click')
 
     @include('pages.client.partials.scripts._load_branches')
+    @include('pages.client.partials.scripts._branch_actions')
 
     @include('pages.client.partials.scripts._load_area_guards')
 
