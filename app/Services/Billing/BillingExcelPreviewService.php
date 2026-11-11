@@ -27,11 +27,34 @@ class BillingExcelPreviewService
             $area['billing_totals'] = $this->zeroTotals();
             foreach ($area['branches'] as &$branch) {
                 $branch['billing_totals'] = $this->zeroTotals();
+                $branch['assigned_guard_count'] = max(1, (int) ($branch['assigned_guard_count'] ?? 1));
+
+                // Retirement eligibility is ranked once across the entire payroll period
+                // for this branch, not recalculated day by day.
+                usort($branch['guards'], function ($a, $b) {
+                    $days = (int) ($b['attended_days'] ?? 0) <=> (int) ($a['attended_days'] ?? 0);
+                    if ($days !== 0) return $days;
+                    $names = strcasecmp((string) ($a['guard_name'] ?? ''), (string) ($b['guard_name'] ?? ''));
+                    return $names !== 0 ? $names : ((int) ($a['user_id'] ?? 0) <=> (int) ($b['user_id'] ?? 0));
+                });
+
+                $eligiblePostCount = 0;
+                foreach ($branch['guards'] as &$rankedGuard) {
+                    $eligible = (int) ($rankedGuard['attended_days'] ?? 0) > 0
+                        && $eligiblePostCount < $branch['assigned_guard_count'];
+                    $rankedGuard['is_contracted_post'] = $eligible;
+                    $rankedGuard['retirement_rank'] = $eligible ? ++$eligiblePostCount : null;
+                }
+                unset($rankedGuard);
+
                 foreach ($branch['guards'] as &$guard) {
                     $daily = (float) $guard['billing_daily_rate'];
                     $monthly = (float) $guard['contract_cost']['contract_cost_excluding_retirement'];
                     $retirement = (float) $guard['contract_cost']['retirement_contribution'];
-                    $halfMonth = $monthly / 2;
+                    $isContractedPost = (bool) ($guard['is_contracted_post'] ?? false);
+                    $halfMonth = $isContractedPost ? $monthly / 2 : 0.0;
+                    $additionalPostDays = $isContractedPost ? 0.0 : (float) ($guard['attended_days'] ?? 0);
+                    $additionalPostDailyRate = $monthly * 12 / 365; // workbook's additional-post daily rate
                     $applyOvertimePremium = (bool) ($area['apply_overtime_rate'] ?? true);
                     $applyNightDiffPremium = (bool) ($area['apply_night_diff_rate'] ?? true);
                     $regularOtMultiplier = $applyOvertimePremium ? 1.25 : 1.0;
@@ -43,21 +66,20 @@ class BillingExcelPreviewService
                     $regularNd = $applyNightDiffPremium ? (float) $guard['regular_nd_hours'] * ($daily / 8 * $regularOtMultiplier * .10) : 0;
                     $specialNd = $applyNightDiffPremium ? (float) $guard['sunday_special_nd_hours'] * ($daily / 8 * $specialOtMultiplier * .10) : 0;
                     $holidayNd = $applyNightDiffPremium ? (float) $guard['legal_holiday_nd_hours'] * ($daily / 8 * $holidayOtMultiplier * .10) : 0;
-                    // Workbook T13 = (monthly contract + retirement + 20% agency fee)
-                    //                * 12 / 365 / 8. Keep the workbook's basis.
-                    $deductionHourly = ($monthly + $retirement + $monthly * .20) * 12 / 365 / 8;
+                    // Deductions follow the applicable post basis: contracted posts
+                    // include retirement; additional posts do not.
+                    $deductionHourly = ($monthly + ($isContractedPost ? $retirement : 0.0) + $monthly * .20) * 12 / 365 / 8;
                     $deductionHours = (float) $guard['late_hours'] + (float) $guard['undertime_hours'];
                     $deductions = $deductionHours * $deductionHourly;
-                    // Additional posts, penalties and the workbook's separate 5%-of-fee
-                    // adjustment require approved billing inputs; they are NOT inferred.
-                    $additionalPostDays = 0.0;
+                    // Additional posts are billed at the daily additional-post rate
+                    // for the guard's attended days in this 15-day payroll period.
                     $penaltyHours = 0.0;
-                    $additionalPostAmount = $additionalPostDays * ($monthly * 12 / 365);
+                    $additionalPostAmount = $additionalPostDays * $additionalPostDailyRate;
                     $beforeFee = $halfMonth + $additionalPostAmount + $regularOt + $specialOt + $holidayOt
                         + $regularNd + $specialNd + $holidayNd - $deductions;
                     $fee = $beforeFee * .20;
                     $ewt = $fee * .02;
-                    $retirementHalf = $retirement / 2;
+                    $retirementHalf = $isContractedPost ? $retirement / 2 : 0.0;
                     $gross = $beforeFee + $fee - $ewt + $retirementHalf;
                     $penaltyAmount = $penaltyHours * 200;
                     $net = $gross - $penaltyAmount;
@@ -68,9 +90,12 @@ class BillingExcelPreviewService
                             'apply_night_diff_rate' => $applyNightDiffPremium,
                             'premium_combination_method' => $area['premium_combination_method'] ?? 'billing_formula',
                         ],
-                        'guard_count' => 1,
+                        'guard_count' => $isContractedPost ? 1 : 0,
+                        'is_contracted_post' => $isContractedPost,
+                        'retirement_rank' => $guard['retirement_rank'] ?? null,
                         'half_month_rate' => round($halfMonth, 2),
                         'additional_post_days' => $additionalPostDays,
+                        'additional_post_daily_rate' => round($additionalPostDailyRate, 2),
                         'additional_post_amount' => round($additionalPostAmount, 2),
                         'regular_ot' => round($regularOt, 2),
                         'special_ot' => round($specialOt, 2),

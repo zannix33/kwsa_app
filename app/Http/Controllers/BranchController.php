@@ -20,6 +20,8 @@ class BranchController extends Controller
 
             'name' => 'required|string|max:255',
 
+            'assigned_guard_count' => 'sometimes|required|integer|min:1|max:500',
+
             'address' => 'nullable|string',
 
             'province' => 'nullable|string|max:255',
@@ -49,6 +51,7 @@ class BranchController extends Controller
             abort_unless(\App\Models\Company::where('id', $validated['company_id'])->where('client_id', $area->client_id)->exists(), 422, 'Selected Company does not belong to this Client.');
         }
 
+        $validated['assigned_guard_count'] = (int) ($validated['assigned_guard_count'] ?? 1);
         $validated['is_closed_saturday'] = $request->boolean('is_closed_saturday');
         $validated['is_closed_sunday'] = $request->boolean('is_closed_sunday');
 
@@ -75,6 +78,8 @@ class BranchController extends Controller
             'company_id' => 'nullable|exists:companies,id',
 
             'name' => 'required|string|max:255',
+
+            'assigned_guard_count' => 'sometimes|required|integer|min:1|max:500',
 
             'address' => 'nullable|string',
 

@@ -122,6 +122,7 @@
         $('#branch_area_id').val(selectedAreaId);
         $('#branchForm [name="name"]').val($button.attr('data-name'));
         $('#branch_company_id').val($button.attr('data-company-id') || '');
+        $('#branchForm [name="assigned_guard_count"]').val($button.attr('data-assigned-guard-count') || 1);
         $('#branchForm [name="address"]').val($button.attr('data-address'));
         $('#branchForm [name="baranggay"]').val($button.attr('data-baranggay'));
         $('#branchForm [name="province"]').val($button.attr('data-province'));

@@ -110,6 +110,7 @@ class BillingGuardDetailService
                     'branch_name' => $branch->name,
                     'company_id' => $branch->company_id,
                     'company_name' => optional($branch->company)->name,
+                    'assigned_guard_count' => (int) ($branch->assigned_guard_count ?? 1),
                     'guards' => [],
                 ];
             }

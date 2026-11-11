@@ -52,6 +52,20 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="branch_assigned_guard_count">Number of Assigned Guard Posts</label>
+                        <input type="number"
+                               id="branch_assigned_guard_count"
+                               name="assigned_guard_count"
+                               class="form-control"
+                               min="1"
+                               max="500"
+                               step="1"
+                               value="1"
+                               required>
+                        <small class="form-text text-muted">Only this number of guards will receive retirement pay in each 15-day payroll period.</small>
+                    </div>
+
+                    <div class="form-group">
 
                         <label>Address</label>
 

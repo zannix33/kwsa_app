@@ -153,6 +153,7 @@
                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit-branch"
                                 data-id="${branch.id}"
                                 data-company-id="${branch.company_id ?? ''}"
+                                data-assigned-guard-count="${branch.assigned_guard_count ?? 1}"
                                 data-name="${escapeHtml(branch.name ?? '')}"
                                 data-address="${escapeHtml(branch.address ?? '')}"
                                 data-baranggay="${escapeHtml(branch.baranggay ?? '')}"
