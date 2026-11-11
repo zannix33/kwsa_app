@@ -40,55 +40,100 @@ class BillingGenerationService
         if (empty($groups)) { throw ValidationException::withMessages(['billing' => 'No billable branches were found for this client and payroll period.']); }
 
         return DB::transaction(function () use ($groups, $period, $unassigned) {
-            foreach ($groups as $group) {
-                $exists = Billing::where('area_id', $group['area']['area_id'])
-                    ->where('company_id', $group['company_id'])
-                    ->where('payroll_period_id', $period->id)
-                    ->where(function ($query) use ($group) {
-                        // Also protect against a legacy area/company bill that
-                        // predates branch-level billing and has a null branch_id.
-                        $query->where('branch_id', $group['branch']['branch_id'])
-                            ->orWhereNull('branch_id');
-                    })
-                    ->exists();
-                if ($exists) {
-                    throw ValidationException::withMessages(['billing' => "A bill already exists for {$group['area']['area_name']} / {$group['branch']['branch_name']} in this payroll period."]);
-                }
-            }
-
             $created = collect();
+            $updated = collect();
+            $skipped = collect();
+
             foreach ($groups as $group) {
                 $branch = $group['branch'];
+                $existing = Billing::where('area_id', $group['area']['area_id'])
+                    ->where('company_id', $group['company_id'])
+                    ->where('payroll_period_id', $period->id)
+                    ->where(function ($query) use ($branch) {
+                        // A null branch_id identifies a legacy area/company bill.
+                        $query->where('branch_id', $branch['branch_id'])
+                            ->orWhereNull('branch_id');
+                    })
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing && strtolower(trim((string) $existing->status)) !== 'draft') {
+                    $skipped->push([
+                        'billing_id' => $existing->id,
+                        'branch_name' => $branch['branch_name'],
+                        'status' => $existing->status,
+                        'reason' => 'Only draft bills can be reprocessed.',
+                    ]);
+                    continue;
+                }
+
                 $rows = collect($branch['guards'])->map(function ($guard) use ($branch) {
                     $guard['_branch_id'] = $branch['branch_id'];
                     return $guard;
                 });
-                $sum = function ($key) use ($rows) { return round($rows->sum(function ($g) use ($key) { return (float) ($g['billing'][$key] ?? 0); }), 2); };
-                $subtotal = $sum('before_fee'); $fee = $sum('agency_fee'); $ewt = $sum('ewt');
-                $retirement = $sum('retirement_half'); $penalty = $sum('penalty_amount'); $vat = $sum('vat');
+                $sum = function ($key) use ($rows) {
+                    return round($rows->sum(function ($g) use ($key) {
+                        return (float) ($g['billing'][$key] ?? 0);
+                    }), 2);
+                };
+                $subtotal = $sum('before_fee');
+                $fee = $sum('agency_fee');
+                $ewt = $sum('ewt');
+                $retirement = $sum('retirement_half');
+                $penalty = $sum('penalty_amount');
+                $vat = $sum('vat');
                 $total = $sum('net_payable');
-                $billing = Billing::create([
-                    'client_id' => $group['area']['client_id'], 'company_id' => $group['company_id'],
-                    'area_id' => $group['area']['area_id'], 'branch_id' => $branch['branch_id'],
-                    'payroll_period_id' => $period->id,
-                    'status' => 'draft', 'subtotal' => $subtotal, 'agency_fee_amount' => $fee,
-                    'retirement_fund_amount' => $retirement, 'penalties_amount' => $penalty,
-                    'ewt_amount' => $ewt, 'vat_amount' => $vat, 'total_amount' => $total,
-                    'tax_type' => 'non_vat', 'calculation_snapshot' => [
-                        'source' => 'excel_preview', 'company_id' => $group['company_id'],
-                        'company_name' => $group['company_name'], 'branch_id' => $branch['branch_id'],
-                        'branch_name' => $branch['branch_name'], 'period_id' => $period->id,
-                        'guard_count' => $rows->count(), 'unassigned_branches_excluded' => $unassigned,
-                        'premium_policy' => [
-                            'client_id' => $group['area']['client_id'] ?? null,
-                            'apply_overtime_rate' => $group['area']['apply_overtime_rate'] ?? true,
-                            'apply_night_diff_rate' => $group['area']['apply_night_diff_rate'] ?? true,
-                            'premium_combination_method' => $group['area']['premium_combination_method'] ?? 'billing_formula',
-                        ],
+
+                $snapshot = [
+                    'source' => 'excel_preview',
+                    'company_id' => $group['company_id'],
+                    'company_name' => $group['company_name'],
+                    'branch_id' => $branch['branch_id'],
+                    'branch_name' => $branch['branch_name'],
+                    'period_id' => $period->id,
+                    'guard_count' => $rows->count(),
+                    'unassigned_branches_excluded' => $unassigned,
+                    'premium_policy' => [
+                        'client_id' => $group['area']['client_id'] ?? null,
+                        'apply_overtime_rate' => $group['area']['apply_overtime_rate'] ?? true,
+                        'apply_night_diff_rate' => $group['area']['apply_night_diff_rate'] ?? true,
+                        'premium_combination_method' => $group['area']['premium_combination_method'] ?? 'billing_formula',
                     ],
-                ]);
+                ];
+
+                $attributes = [
+                    'client_id' => $group['area']['client_id'],
+                    'company_id' => $group['company_id'],
+                    'area_id' => $group['area']['area_id'],
+                    'branch_id' => $branch['branch_id'],
+                    'payroll_period_id' => $period->id,
+                    'subtotal' => $subtotal,
+                    'agency_fee_amount' => $fee,
+                    'retirement_fund_amount' => $retirement,
+                    'penalties_amount' => $penalty,
+                    'ewt_amount' => $ewt,
+                    'vat_amount' => $vat,
+                    'total_amount' => $total,
+                    'tax_type' => $existing->tax_type ?? 'non_vat',
+                    'calculation_snapshot' => $snapshot,
+                ];
+
+                if ($existing) {
+                    // Preserve invoice metadata and status; replace only the
+                    // calculated draft contents from the latest preview.
+                    $existing->fill($attributes);
+                    $existing->save();
+                    $existing->items()->delete();
+                    $billing = $existing;
+                    $updated->push($billing);
+                } else {
+                    $billing = Billing::create($attributes + ['status' => 'draft']);
+                    $created->push($billing);
+                }
+
                 foreach ($rows as $guard) {
-                    $v = $guard['billing']; $branchId = $guard['_branch_id'];
+                    $v = $guard['billing'];
+                    $branchId = $guard['_branch_id'];
                     $items = [
                         ['BASE_CONTRACT', 'Half-month contract base', 'guards', 1, $v['half_month_rate']],
                         ['REGULAR_OT', 'Regular overtime', 'amount', 1, $v['regular_ot']],
@@ -105,15 +150,30 @@ class BillingGenerationService
                     ];
                     foreach ($items as [$code, $description, $unit, $qty, $amount]) {
                         if (abs((float) $amount) < 0.005) continue;
-                        BillingItem::create(['billing_id' => $billing->id, 'branch_id' => $branchId,
-                            'user_id' => $guard['user_id'], 'code' => $code, 'type' => $amount < 0 ? 'deduction' : 'charge',
-                            'description' => $description, 'quantity' => $qty, 'unit' => $unit,
-                            'rate' => $amount, 'amount' => round($amount, 2), 'calculation_details' => $v]);
+                        BillingItem::create([
+                            'billing_id' => $billing->id,
+                            'branch_id' => $branchId,
+                            'user_id' => $guard['user_id'],
+                            'code' => $code,
+                            'type' => $amount < 0 ? 'deduction' : 'charge',
+                            'description' => $description,
+                            'quantity' => $qty,
+                            'unit' => $unit,
+                            'rate' => $amount,
+                            'amount' => round($amount, 2),
+                            'calculation_details' => $v,
+                        ]);
                     }
                 }
-                $created->push($billing);
             }
-            return ['billings' => $created, 'unassigned_branches' => $unassigned];
+
+            return [
+                'billings' => $created,
+                'created' => $created,
+                'updated' => $updated,
+                'skipped' => $skipped,
+                'unassigned_branches' => $unassigned,
+            ];
         });
     }
 }

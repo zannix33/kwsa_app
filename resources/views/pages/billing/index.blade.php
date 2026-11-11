@@ -31,7 +31,7 @@
             @elseif($clients->isEmpty())
                 <p>No clients are available.</p>
             @else
-                <p>Select a client and a closed payroll period. The system creates a separate draft bill for every assigned branch belonging to that client. Each branch has its own bill and total.</p>
+                <p>Select a client and a closed payroll period to reprocess billing. Missing branch bills will be created, existing draft bills will be recalculated and updated, and approved, issued or paid bills will be left unchanged.</p>
                 <form method="POST" action="{{ route('billing.generate') }}">
                     @csrf
                     <div class="form-group">
@@ -54,7 +54,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('Process a separate draft bill for every assigned branch under this client?')">Process Billing</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Reprocess billing for this client and period? Existing draft bills will be updated. Approved, issued and paid bills will not be changed.')">Reprocess Billing</button>
                 </form>
             @endif
         </div>

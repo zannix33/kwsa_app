@@ -56,9 +56,11 @@ class BillingController extends Controller
         $this->ensurePeriodClosed($period);
 
         $result = $billingGenerationService->generate($period, (int) $validated['client_id']);
-        $createdBills = $result['billings'];
+        $createdCount = $result['created']->count();
+        $updatedCount = $result['updated']->count();
+        $skippedCount = $result['skipped']->count();
         $redirect = redirect()->route('billing.index')
-            ->with('success', $createdBills->count() . ' separate draft bill(s) generated for the selected client. Each branch has its own bill and total.');
+            ->with('success', "Billing reprocessed. {$createdCount} bill(s) created, {$updatedCount} draft bill(s) updated, and {$skippedCount} non-draft bill(s) protected.");
         if (!empty($result['unassigned_branches'])) {
             $redirect->with('unassigned_branches', $result['unassigned_branches']);
         }
