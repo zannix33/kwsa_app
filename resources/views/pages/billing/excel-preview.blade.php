@@ -143,7 +143,7 @@
                     <th># Days</th><th>Rate/per day</th><th>No. of hours</th><th>rate per hour × 125%</th><th>No. of hours</th><th>rate per hour × 169%</th><th>No. of hours</th><th>rate per hour × 260%</th><th># hrs</th><th>Regular OT rate/hr × 10%</th><th># hrs</th><th>Sun Spcl OT rate/hr × 10%</th><th># hrs</th><th>Legal Holiday OT rate/hr × 10%</th><th># hrs</th><th>Rate per hour</th><th># of hours</th><th>Amount/hr</th><th>60091</th><th>60095</th><th>60092</th><th>20202</th><th>A/P Vendor</th><th>Cost Center</th>
                 </tr>
                 <tr class="rate-row">
-                    <td>{{ $money($monthlyRate / 2) }}</td><td></td><td>{{ $money($dailyRate * 12 / 365) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60 * .10) }}</td><td></td><td>{{ $money($monthlyAfterAdmin * 12 / 365 / 8) }}</td><td></td><td>200.00</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td>{{ $money($monthlyRate / 2) }}</td><td></td><td>{{ $money($monthlyRate * 12 / 365) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60 * .10) }}</td><td></td><td>{{ $money($monthlyAfterAdmin * 12 / 365 / 8) }}</td><td></td><td>200.00</td><td></td><td></td><td></td><td></td><td></td><td></td>
                 </tr>
             </thead>
             <tbody>
@@ -164,7 +164,7 @@
                     @endphp
                     <tr>
                         <td class="left">{{ $loop->first ? $branch['branch_name'] : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ number_format((float)($v['guard_count'] ?? 1),0) }}</td>
-                        <td>{{ $money($v['half_month_rate']) }}</td><td>{{ $hours($additionalDays) }}</td><td>{{ $money($daily * 12 / 365) }}</td>
+                        <td>{{ $money($v['half_month_rate']) }}</td><td>{{ $hours($additionalDays) }}</td><td>{{ $money($v['additional_post_amount'] ?? 0) }}</td>
                         <td>{{ $hours($guard['regular_ot_hours']) }}</td><td>{{ $money($v['regular_ot']) }}</td><td>{{ $hours($guard['sunday_special_ot_hours']) }}</td><td>{{ $money($v['special_ot']) }}</td><td>{{ $hours($guard['regular_holiday_ot_hours']) }}</td><td>{{ $money($v['holiday_ot']) }}</td>
                         <td>{{ $hours($guard['regular_nd_hours']) }}</td><td>{{ $money($v['regular_nd']) }}</td><td>{{ $hours($guard['sunday_special_nd_hours']) }}</td><td>{{ $money($v['special_nd']) }}</td><td>{{ $hours($guard['legal_holiday_nd_hours']) }}</td><td>{{ $money($v['holiday_nd']) }}</td>
                         <td>{{ $hours($deductionHours) }}</td><td>{{ $money($v['deductions']) }}</td><td>{{ $money($v['before_fee']) }}</td><td>{{ $money($v['agency_fee']) }}</td><td>{{ $money($v['ewt']) }}</td><td>{{ $money($v['retirement_half']) }}</td><td>{{ $money($v['gross']) }}</td><td>{{ $hours($penaltyHours) }}</td><td>{{ $money($penaltyRate) }}</td><td>{{ $money($v['net_payable']) }}</td><td></td>
