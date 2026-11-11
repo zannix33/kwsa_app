@@ -15,6 +15,7 @@ class Billing extends Model
         'client_id',
         'company_id',
         'area_id',
+        'branch_id',
         'payroll_period_id',
         'invoice_number',
         'status',
@@ -58,6 +59,11 @@ class Billing extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function payrollPeriod(): BelongsTo
