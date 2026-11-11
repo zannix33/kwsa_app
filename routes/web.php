@@ -543,6 +543,10 @@ Route::group(['middleware' => ['auth']], function () {
         \App\Http\Controllers\BillingExcelPreviewController::class, 'show'
     ])->name('billing.excel-preview');
 
+    Route::get('/billing/periods/{period}/excel-export', [
+        \App\Http\Controllers\BillingExcelPreviewController::class, 'export'
+    ])->name('billing.excel-export');
+
 
 
 
