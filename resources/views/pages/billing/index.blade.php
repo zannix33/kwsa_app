@@ -24,14 +24,14 @@
     @endif
 
     <section class="card mb-4">
-        <div class="card-header">Process billing by client, company, area and branch</div>
+        <div class="card-header">Process billing by client, company and area</div>
         <div class="card-body">
             @if($closedPeriods->isEmpty())
                 <p>No closed payroll periods are available for billing.</p>
             @elseif($clients->isEmpty())
                 <p>No clients are available.</p>
             @else
-                <p>Select a client and a closed payroll period to reprocess billing. Missing branch bills will be created, existing draft bills will be recalculated and updated, and approved, issued or paid bills will be left unchanged.</p>
+                <p>Select a client and a closed payroll period to reprocess billing. Missing company-and-area bills will be created, existing draft bills will be recalculated and updated, and approved, issued or paid bills will be left unchanged.</p>
                 <form method="POST" action="{{ route('billing.generate') }}">
                     @csrf
                     <div class="form-group">
@@ -65,7 +65,7 @@
         <div class="card-body table-responsive">
             <table class="table table-striped">
                 <thead>
-                    <tr><th>Bill</th><th>Client</th><th>Company</th><th>Area</th><th>Branch</th><th>Payroll period</th><th>Status</th><th></th></tr>
+                    <tr><th>Bill</th><th>Client</th><th>Company</th><th>Area</th><th>Branches</th><th>Payroll period</th><th>Status</th><th></th></tr>
                 </thead>
                 <tbody>
                 @forelse($billings as $billing)
@@ -74,13 +74,13 @@
                         <td>{{ optional($billing->client)->name ?? '—' }}</td>
                         <td>{{ optional($billing->company)->name ?? '—' }}</td>
                         <td>{{ optional($billing->area)->name ?? '—' }}</td>
-                        <td>{{ optional($billing->branch)->name ?? '—' }}</td>
+                        <td>All branches ({{ $billing->items->pluck('branch_id')->filter()->unique()->count() }})</td>
                         <td>{{ optional($billing->payrollPeriod)->name ?? ('Period #' . $billing->payroll_period_id) }}</td>
                         <td>{{ $billing->status ?? '—' }}</td>
                         <td>
                             <a href="{{ route('billing.show', $billing) }}">View</a> |
                             <a href="{{ route('billing.print', $billing) }}">Print</a> |
-                            <a href="{{ route('billing.excel-preview', ['period' => $billing->payroll_period_id, 'company_id' => $billing->company_id, 'area_id' => $billing->area_id, 'branch_id' => $billing->branch_id]) }}">Excel preview</a>
+                            <a href="{{ route('billing.excel-preview', ['period' => $billing->payroll_period_id, 'company_id' => $billing->company_id, 'area_id' => $billing->area_id]) }}">Excel preview</a>
                         </td>
                     </tr>
                 @empty

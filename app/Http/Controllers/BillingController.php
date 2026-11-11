@@ -18,7 +18,7 @@ class BillingController extends Controller
             ->orderByDesc('date_from')
             ->get();
 
-        $billings = Billing::with(['client', 'company', 'area', 'branch', 'payrollPeriod'])
+        $billings = Billing::with(['client', 'company', 'area', 'payrollPeriod', 'items'])
             ->orderByDesc('created_at')
             ->paginate(20);
 

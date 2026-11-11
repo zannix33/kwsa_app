@@ -64,7 +64,7 @@
                 <div class="label">Service / Billing Details</div>
                 <strong>Company:</strong> {{ optional($billing->company)->name ?: 'Legacy / not assigned' }}<br>
                 <strong>Area:</strong> {{ optional($billing->area)->name ?: '—' }}<br>
-                <strong>Branch:</strong> {{ optional($billing->branch)->name ?: '—' }}<br>
+                <strong>Branches:</strong> All branches<br>
                 <strong>Payroll period:</strong> {{ optional($billing->payrollPeriod)->name ?: '—' }}<br>
                 <strong>Coverage:</strong>
                 {{ optional(optional($billing->payrollPeriod)->date_from)->format('M d, Y') ?: '—' }} –

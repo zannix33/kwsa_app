@@ -8,7 +8,10 @@ use App\Models\PayrollPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/** Saves bills from the exact guard-level values used by the Excel preview. */
+/**
+ * Generates one bill per company + area + payroll period.
+ * Branch identity is retained on each billing item, not on the bill header.
+ */
 class BillingGenerationService
 {
     public function __construct(private BillingExcelPreviewService $preview) {}
@@ -20,24 +23,38 @@ class BillingGenerationService
         }
 
         $data = $this->preview->build($period);
-        $data['areas'] = array_values(array_filter($data['areas'], function ($area) use ($clientId) { return (int) ($area['client_id'] ?? 0) === $clientId; }));
+        $areas = array_values(array_filter(
+            $data['areas'],
+            fn ($area) => (int) ($area['client_id'] ?? 0) === $clientId
+        ));
         $unassigned = $data['unassigned_branches'] ?? [];
         $groups = [];
-        foreach ($data['areas'] as $area) {
-            foreach ($area['branches'] as $branch) {
-                if (empty($branch['company_id'])) continue;
 
-                $key = $area['area_id'].'|'.$branch['company_id'].'|'.$branch['branch_id'];
-                $groups[$key] = [
-                    'area' => $area,
-                    'company_id' => $branch['company_id'],
-                    'company_name' => $branch['company_name'],
-                    'branch' => $branch,
-                ];
+        foreach ($areas as $area) {
+            foreach ($area['branches'] as $branch) {
+                if (empty($branch['company_id'])) {
+                    continue;
+                }
+
+                // A bill represents the company across every branch in this area.
+                $key = $area['area_id'] . '|' . $branch['company_id'];
+                if (!isset($groups[$key])) {
+                    $groups[$key] = [
+                        'area' => $area,
+                        'company_id' => $branch['company_id'],
+                        'company_name' => $branch['company_name'],
+                        'branches' => [],
+                    ];
+                }
+                $groups[$key]['branches'][] = $branch;
             }
         }
 
-        if (empty($groups)) { throw ValidationException::withMessages(['billing' => 'No billable branches were found for this client and payroll period.']); }
+        if (empty($groups)) {
+            throw ValidationException::withMessages([
+                'billing' => 'No billable branches were found for this client and payroll period.',
+            ]);
+        }
 
         return DB::transaction(function () use ($groups, $period, $unassigned) {
             $created = collect();
@@ -45,52 +62,52 @@ class BillingGenerationService
             $skipped = collect();
 
             foreach ($groups as $group) {
-                $branch = $group['branch'];
-                $existing = Billing::where('area_id', $group['area']['area_id'])
+                $branchIds = collect($group['branches'])->pluck('branch_id')->filter()->unique()->values();
+
+                // Lock all records for this company/area/period, including legacy branch-level bills.
+                $existingBills = Billing::where('area_id', $group['area']['area_id'])
                     ->where('company_id', $group['company_id'])
                     ->where('payroll_period_id', $period->id)
-                    ->where(function ($query) use ($branch) {
-                        // A null branch_id identifies a legacy area/company bill.
-                        $query->where('branch_id', $branch['branch_id'])
-                            ->orWhereNull('branch_id');
-                    })
                     ->lockForUpdate()
-                    ->first();
+                    ->orderByRaw('branch_id IS NOT NULL')
+                    ->orderBy('id')
+                    ->get();
 
-                if ($existing && strtolower(trim((string) $existing->status)) !== 'draft') {
+                $protected = $existingBills->first(
+                    fn ($bill) => strtolower(trim((string) $bill->status)) !== 'draft'
+                );
+
+                if ($protected) {
                     $skipped->push([
-                        'billing_id' => $existing->id,
-                        'branch_name' => $branch['branch_name'],
-                        'status' => $existing->status,
-                        'reason' => 'Only draft bills can be reprocessed.',
+                        'billing_id' => $protected->id,
+                        'area_name' => $group['area']['area_name'],
+                        'company_name' => $group['company_name'],
+                        'status' => $protected->status,
+                        'reason' => 'A non-draft bill exists for this company, area and period; the group was left unchanged.',
                     ]);
                     continue;
                 }
 
-                $rows = collect($branch['guards'])->map(function ($guard) use ($branch) {
-                    $guard['_branch_id'] = $branch['branch_id'];
-                    return $guard;
-                });
-                $sum = function ($key) use ($rows) {
-                    return round($rows->sum(function ($g) use ($key) {
-                        return (float) ($g['billing'][$key] ?? 0);
-                    }), 2);
-                };
-                $subtotal = $sum('before_fee');
-                $fee = $sum('agency_fee');
-                $ewt = $sum('ewt');
-                $retirement = $sum('retirement_half');
-                $penalty = $sum('penalty_amount');
-                $vat = $sum('vat');
-                $total = $sum('net_payable');
+                $rows = collect($group['branches'])->flatMap(function ($branch) {
+                    return collect($branch['guards'])->map(function ($guard) use ($branch) {
+                        $guard['_branch_id'] = $branch['branch_id'];
+                        return $guard;
+                    });
+                })->values();
+
+                $sum = fn ($key) => round($rows->sum(
+                    fn ($guard) => (float) ($guard['billing'][$key] ?? 0)
+                ), 2);
 
                 $snapshot = [
                     'source' => 'excel_preview',
                     'company_id' => $group['company_id'],
                     'company_name' => $group['company_name'],
-                    'branch_id' => $branch['branch_id'],
-                    'branch_name' => $branch['branch_name'],
+                    'area_id' => $group['area']['area_id'],
+                    'area_name' => $group['area']['area_name'],
                     'period_id' => $period->id,
+                    'branch_ids' => $branchIds->all(),
+                    'branch_names' => collect($group['branches'])->pluck('branch_name')->values()->all(),
                     'guard_count' => $rows->count(),
                     'unassigned_branches_excluded' => $unassigned,
                     'premium_policy' => [
@@ -101,30 +118,38 @@ class BillingGenerationService
                     ],
                 ];
 
+                // Prefer an existing area-level bill; otherwise retain the oldest draft
+                // so invoice number, dates and notes remain stable during reprocessing.
+                $billing = $existingBills->first();
+                if ($billing) {
+                    foreach ($existingBills->skip(1) as $duplicate) {
+                        // The records are all drafts (protected records were handled above).
+                        $duplicate->items()->delete();
+                        $duplicate->delete();
+                    }
+                }
+
                 $attributes = [
                     'client_id' => $group['area']['client_id'],
                     'company_id' => $group['company_id'],
                     'area_id' => $group['area']['area_id'],
-                    'branch_id' => $branch['branch_id'],
+                    'branch_id' => null,
                     'payroll_period_id' => $period->id,
-                    'subtotal' => $subtotal,
-                    'agency_fee_amount' => $fee,
-                    'retirement_fund_amount' => $retirement,
-                    'penalties_amount' => $penalty,
-                    'ewt_amount' => $ewt,
-                    'vat_amount' => $vat,
-                    'total_amount' => $total,
-                    'tax_type' => $existing->tax_type ?? 'non_vat',
+                    'subtotal' => $sum('before_fee'),
+                    'agency_fee_amount' => $sum('agency_fee'),
+                    'retirement_fund_amount' => $sum('retirement_half'),
+                    'penalties_amount' => $sum('penalty_amount'),
+                    'ewt_amount' => $sum('ewt'),
+                    'vat_amount' => $sum('vat'),
+                    'total_amount' => $sum('net_payable'),
+                    'tax_type' => $billing?->tax_type ?? 'non_vat',
                     'calculation_snapshot' => $snapshot,
                 ];
 
-                if ($existing) {
-                    // Preserve invoice metadata and status; replace only the
-                    // calculated draft contents from the latest preview.
-                    $existing->fill($attributes);
-                    $existing->save();
-                    $existing->items()->delete();
-                    $billing = $existing;
+                if ($billing) {
+                    $billing->fill($attributes);
+                    $billing->save();
+                    $billing->items()->delete();
                     $updated->push($billing);
                 } else {
                     $billing = Billing::create($attributes + ['status' => 'draft']);
@@ -148,8 +173,11 @@ class BillingGenerationService
                         ['RETIREMENT_FUND', 'Retirement fund (half month)', 'amount', 1, $v['retirement_half']],
                         ['PENALTY', 'Penalty', 'amount', 1, -$v['penalty_amount']],
                     ];
+
                     foreach ($items as [$code, $description, $unit, $qty, $amount]) {
-                        if (abs((float) $amount) < 0.005) continue;
+                        if (abs((float) $amount) < 0.005) {
+                            continue;
+                        }
                         BillingItem::create([
                             'billing_id' => $billing->id,
                             'branch_id' => $branchId,
