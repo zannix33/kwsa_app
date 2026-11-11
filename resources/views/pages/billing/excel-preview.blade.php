@@ -2,106 +2,131 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Billing preview — {{ $period['name'] }}</title>
+<title>Billing worksheet — {{ $period['name'] ?? 'Payroll period' }}</title>
 <style>
-body{font-family:Arial,sans-serif;font-size:11px;color:#172235;margin:20px}
-h1{font-size:17px;margin:0 0 5px}h2{font-size:14px;margin:18px 0 8px}
-.meta{margin-bottom:12px}.muted{color:#576579}
-.sheet{margin-bottom:34px;page-break-after:always}
-.table-wrap{overflow-x:auto}table{border-collapse:collapse;min-width:1850px;width:100%}
-th,td{border:1px solid #b8c3d0;padding:5px 6px;white-space:nowrap;text-align:right}
-th{background:#dce8f4;font-weight:bold}td.left,th.left{text-align:left}
-.branch td{background:#eaf0f7;font-weight:bold;text-align:left}
-.total td{background:#dce8f4;font-weight:bold}
-.note{font-size:10px;line-height:1.5;max-width:1150px;margin:12px 0}
-@media print{body{margin:6mm}.no-print{display:none}.sheet{page-break-after:always}@page{size:A3 landscape;margin:7mm}}
+*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:14px;font-size:10px}.no-print{margin-bottom:12px}.no-print button{padding:8px 14px;cursor:pointer}
+.sheet{width:100%;margin:0 auto 28px;page-break-after:always;break-after:page}.sheet:last-child{page-break-after:auto;break-after:auto}
+.sheet-title{font-size:17px;font-weight:700;text-align:center;padding:5px;border:1px solid #111}
+.info{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:8px}.info td{border:1px solid #888;padding:3px 5px;height:21px}.info .label{font-weight:700;background:#f1f1f1}.info .section{font-weight:700;text-align:center;background:#e8edf3}.info .value{font-weight:600}
+.billing{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px}.billing th,.billing td{border:1px solid #555;padding:3px 2px;vertical-align:middle;overflow-wrap:anywhere}.billing th{text-align:center;font-weight:700;background:#e8edf3}.billing td{text-align:right;height:21px}.billing td.left{text-align:left}.billing .subhead th{background:#f4f6f8;font-weight:600}.billing .rate-row td{background:#fafafa;font-weight:600;height:24px}.billing .total td{background:#e3eaf2;font-weight:700;border-top:2px solid #222}.billing .accounting-head{background:#dce5ef}.summary{width:42%;margin:8px 0 0 auto;border-collapse:collapse}.summary td{border:1px solid #777;padding:4px 6px}.summary td:last-child{text-align:right;font-weight:700}.note{font-size:9px;margin-top:8px}
+@media screen{.sheet{overflow-x:auto}.billing{min-width:1500px}}
+@media print{body{margin:5mm}.no-print{display:none}.sheet{margin:0;page-break-after:always;break-after:page}.sheet:last-child{page-break-after:auto;break-after:auto}.billing{min-width:0;font-size:6.5px}.billing th,.billing td{padding:2px 1px}.info td{padding:2px 3px}@page{size:A3 landscape;margin:6mm}}
 </style>
 </head>
 <body>
-<div class="no-print"><button onclick="window.print()">Print preview</button></div>
-@if(!empty($data['unassigned_branches']))<p class="note"><strong>Excluded — branches without an assigned company:</strong> @foreach($data['unassigned_branches'] as $b){{ $b['area_name'] }} / {{ $b['branch_name'] }}@if(!$loop->last); @endif @endforeach</p>@endif
+<div class="no-print"><button onclick="window.print()">Print all branch bills</button></div>
+@if(!empty($data['unassigned_branches']))
+<p class="note"><strong>Excluded — branches without an assigned company:</strong>
+@foreach($data['unassigned_branches'] as $b){{ $b['area_name'] }} / {{ $b['branch_name'] }}@if(!$loop->last); @endif @endforeach</p>
+@endif
+
 @foreach($areas as $area)
-<section class="sheet">
-<h1>KINGWIZARD SECURITY AGENCY — Billing worksheet preview</h1>
-<div class="meta"><strong>Area:</strong> {{ $area['area_name'] }} &nbsp; | &nbsp;
-<strong>Period:</strong> {{ $period['date_from'] }} to {{ $period['date_to'] }} &nbsp; | &nbsp;
-<strong>Client:</strong> {{ $area['client_name'] ?? '—' }}</div>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th class="left">Branch</th><th class="left">Guard name</th><th># guards</th>
-<th>Daily wage</th><th>Monthly contract (less retirement)</th><th>Half-month base</th>
-<th>Reg OT hrs</th><th>Reg OT amount 125%</th>
-<th>Sun/Spcl OT hrs</th><th>Sun/Spcl amount 169%</th>
-<th>Legal OT hrs</th><th>Legal amount 260%</th>
-<th>Reg ND hrs</th><th>Reg ND amount</th>
-<th>Sun/Spcl ND hrs</th><th>Sun/Spcl ND amount</th>
-<th>Legal ND hrs</th><th>Legal ND amount</th>
-<th>Late/UT hrs</th><th>Late/UT deduction</th>
-<th>Before admin</th><th>Admin 20%</th><th>EWT 2% of admin</th>
-<th>Retirement (half month)</th><th>Estimated total</th>
-</tr>
-</thead><tbody>
-@php
-$sum = array_fill_keys(['base','ot_reg','ot_special','ot_legal','nd_reg','nd_special','nd_legal','deduction','subtotal','admin','ewt','retirement','grand'],0.0);
-@endphp
-@foreach($area['branches'] as $branch)
-<tr class="branch"><td colspan="25">{{ $branch['branch_name'] }} — {{ $branch['company_name'] ?? 'Company not assigned' }}</td></tr>
-@foreach($branch['guards'] as $guard)
-@php
-$rate = (float) $guard['billing_daily_rate'];
-$hourly = $rate / 8;
-$contract = (float) $guard['contract_cost']['contract_cost_excluding_retirement'];
-$retirementMonthly = (float) $guard['contract_cost']['retirement_contribution'];
-$base = $contract / 2;
-$otReg = (float)$guard['regular_ot_hours'] * $hourly * 1.25;
-$otSpecial = (float)$guard['sunday_special_ot_hours'] * $hourly * 1.69;
-$otLegal = (float)$guard['regular_holiday_ot_hours'] * $hourly * 2.60;
-$ndReg = (float)$guard['regular_nd_hours'] * $hourly * 1.25 * 0.10;
-$ndSpecial = (float)$guard['sunday_special_nd_hours'] * $hourly * 1.69 * 0.10;
-$ndLegal = (float)$guard['legal_holiday_nd_hours'] * $hourly * 2.60 * 0.10;
-$lateHours = (float)$guard['late_hours'] + (float)$guard['undertime_hours'];
-// Workbook uses monthly contract + retirement + 20% admin as its late-rate basis.
-$lateRate = ($contract + $retirementMonthly + ($contract * 0.20)) * 12 / 365 / 8;
-$deduction = $lateHours * $lateRate;
-$subtotal = $base + $otReg + $otSpecial + $otLegal + $ndReg + $ndSpecial + $ndLegal - $deduction;
-$admin = $subtotal * 0.20;
-$ewt = $admin * 0.02;
-$retirement = $retirementMonthly / 2;
-$grand = $subtotal + $admin - $ewt + $retirement;
-foreach(compact('base','otReg','otSpecial','otLegal','ndReg','ndSpecial','ndLegal','deduction','subtotal','admin','ewt','retirement','grand') as $key => $value) {
-    $normalized = ['otReg'=>'ot_reg','otSpecial'=>'ot_special','otLegal'=>'ot_legal','ndReg'=>'nd_reg','ndSpecial'=>'nd_special','ndLegal'=>'nd_legal'][$key] ?? $key;
-    $sum[$normalized] += $value;
-}
-@endphp
-<tr>
-<td class="left">{{ $loop->first ? $branch['branch_name'] : '' }}</td>
-<td class="left">{{ $guard['guard_name'] }}</td><td>1</td>
-<td>{{ number_format($rate,2) }}</td><td>{{ number_format($contract,2) }}</td><td>{{ number_format($base,2) }}</td>
-<td>{{ number_format($guard['regular_ot_hours'],2) }}</td><td>{{ number_format($otReg,2) }}</td>
-<td>{{ number_format($guard['sunday_special_ot_hours'],2) }}</td><td>{{ number_format($otSpecial,2) }}</td>
-<td>{{ number_format($guard['regular_holiday_ot_hours'],2) }}</td><td>{{ number_format($otLegal,2) }}</td>
-<td>{{ number_format($guard['regular_nd_hours'],2) }}</td><td>{{ number_format($ndReg,2) }}</td>
-<td>{{ number_format($guard['sunday_special_nd_hours'],2) }}</td><td>{{ number_format($ndSpecial,2) }}</td>
-<td>{{ number_format($guard['legal_holiday_nd_hours'],2) }}</td><td>{{ number_format($ndLegal,2) }}</td>
-<td>{{ number_format($lateHours,2) }}</td><td>{{ number_format($deduction,2) }}</td>
-<td>{{ number_format($subtotal,2) }}</td><td>{{ number_format($admin,2) }}</td><td>{{ number_format($ewt,2) }}</td>
-<td>{{ number_format($retirement,2) }}</td><td>{{ number_format($grand,2) }}</td>
-</tr>
+    @foreach($area['branches'] as $branch)
+        @php
+            $guards = $branch['guards'];
+            $branchCompany = $companies->get($branch['company_id'] ?? null);
+            $first = $guards[0] ?? [];
+            $firstBilling = $first['billing'] ?? [];
+            $dailyRate = count($guards) ? array_sum(array_map(fn($g) => (float)($g['billing_daily_rate'] ?? 0), $guards)) / count($guards) : 0;
+            $monthlyRate = count($guards) ? array_sum(array_map(fn($g) => (float)($g['contract_cost']['contract_cost_excluding_retirement'] ?? 0), $guards)) / count($guards) : 0;
+            $govAmount = count($guards) ? array_sum(array_map(fn($g) => (float)($g['contract_cost']['retirement_contribution'] ?? 0), $guards)) / count($guards) : 0;
+            $adminHeader = $monthlyRate * .20;
+            $monthlyAfterAdmin = $monthlyRate + $govAmount + $adminHeader;
+            $sum = $branch['billing_totals'];
+            $totalRegularOtHours = array_sum(array_map(fn($g) => (float)($g['regular_ot_hours'] ?? 0), $guards));
+            $totalSpecialOtHours = array_sum(array_map(fn($g) => (float)($g['sunday_special_ot_hours'] ?? 0), $guards));
+            $totalHolidayOtHours = array_sum(array_map(fn($g) => (float)($g['regular_holiday_ot_hours'] ?? 0), $guards));
+            $totalRegularNdHours = array_sum(array_map(fn($g) => (float)($g['regular_nd_hours'] ?? 0), $guards));
+            $totalSpecialNdHours = array_sum(array_map(fn($g) => (float)($g['sunday_special_nd_hours'] ?? 0), $guards));
+            $totalHolidayNdHours = array_sum(array_map(fn($g) => (float)($g['legal_holiday_nd_hours'] ?? 0), $guards));
+            $money = fn($value) => number_format((float)$value, 2);
+            $hours = fn($value) => number_format((float)$value, 2);
+        @endphp
+        <section class="sheet">
+            <div class="sheet-title">KINGWIZARD SECURITY AGENCY</div>
+            <table class="info">
+                <tr>
+                    <td class="label" colspan="2">Company:</td><td class="value" colspan="4">{{ $branch['company_name'] ?? $company->name ?? '' }}</td>
+                    <td class="section" colspan="5" rowspan="2">PER CONTRACT:</td><td class="label" colspan="5">Daily Minimum Wage</td><td class="value" colspan="3">{{ $money($dailyRate) }}</td><td colspan="16"></td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">VAT Registration Number:</td><td class="value" colspan="4">{{ $branchCompany->vat_registration_number ?? '' }}</td><td class="label" colspan="5">Monthly Rate for Guard</td><td class="value" colspan="3">{{ $money($monthlyRate) }}</td><td colspan="16"></td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">Account Number:</td><td class="value" colspan="4">{{ $branchCompany->account_number ?? '' }}</td><td class="label" colspan="5">Amount to Gov't in favor to Guard</td><td class="value" colspan="3">{{ $money($govAmount) }}</td><td colspan="16"></td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">Period Covered:</td><td class="value" colspan="4">{{ \Illuminate\Support\Carbon::parse($period['date_from'])->format('F d') }} - {{ \Illuminate\Support\Carbon::parse($period['date_to'])->format('d, Y') }}</td><td class="label" colspan="5">Admin Fee</td><td class="value" colspan="3">{{ $money($adminHeader) }}</td><td colspan="16"></td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">Area:</td><td class="value" colspan="4">{{ $area['area_name'] }}</td><td class="label" colspan="5">Monthly Rate after Admin Fee</td><td class="value" colspan="3">{{ $money($monthlyAfterAdmin) }}</td><td class="value" colspan="2">(non VAT)</td><td colspan="14"></td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">Particulars:</td><td class="value" colspan="4">REG/OT</td><td colspan="29"></td>
+                </tr>
+            </table>
+
+            <table class="billing">
+                <colgroup>
+                    <col style="width:5.2%"><col style="width:7.4%"><col style="width:2.7%"><col style="width:4.2%"><col style="width:2.5%"><col style="width:3.8%"><col style="width:2.4%"><col style="width:4.1%"><col style="width:2.4%"><col style="width:4.1%"><col style="width:2.4%"><col style="width:4.1%"><col style="width:2.4%"><col style="width:4.2%"><col style="width:2.4%"><col style="width:4.2%"><col style="width:2.4%"><col style="width:4.2%"><col style="width:2.4%"><col style="width:4.2%"><col style="width:5%"><col style="width:4%"><col style="width:3.3%"><col style="width:4.4%"><col style="width:5%"><col style="width:2.7%"><col style="width:4%"><col style="width:5%"><col style="width:1%"><col style="width:4%"><col style="width:3.5%"><col style="width:3.5%"><col style="width:3.5%"><col style="width:4.5%"><col style="width:4.5%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="3">Branch Name</th><th rowspan="3">GUARD NAME</th><th rowspan="3"># guards</th><th rowspan="2">Rate</th><th colspan="2">Additional Posts</th>
+                        <th colspan="2">REG. O.T</th><th colspan="2">Sun Spcl OT</th><th colspan="2">Legal or Reg Holiday OT</th><th colspan="6">Night Shift Differential- 10%</th>
+                        <th colspan="2">LESS: Absences/Late</th><th rowspan="3">GRAND TOTAL (before Admin Fee and VAT)</th><th rowspan="3">ADMIN FEE</th><th rowspan="3">EWT</th><th rowspan="3">Add: Retirement contribution (for Guard)</th><th rowspan="3">GRAND TOTAL (after Admin Fee and VAT)</th><th colspan="2">Less: Penalty Charges</th><th rowspan="3">NET PAYABLE AMOUNT</th><th rowspan="3"></th><th colspan="6" class="accounting-head">ACCOUNTING USE</th>
+                    </tr>
+                    <tr class="subhead">
+                        <th># Days</th><th>Rate/per day</th><th>No. of hours</th><th>rate per hour × 125%</th><th>No. of hours</th><th>rate per hour × 169%</th><th>No. of hours</th><th>rate per hour × 260%</th>
+                        <th># hrs</th><th>Regular OT rate/hr × 10%</th><th># hrs</th><th>Sun Spcl OT rate/hr × 10%</th><th># hrs</th><th>Legal Holiday OT rate/hr × 10%</th><th># hrs</th><th>Rate per hour</th>
+                        <th># of hours</th><th>Amount/hr</th><th>60091</th><th>60095</th><th>60092</th><th>20202</th><th>A/P Vendor</th><th>Cost Center</th>
+                    </tr>
+                    <tr class="rate-row">
+                        <td>{{ $money($monthlyRate / 2) }}</td><td></td><td>{{ $money($dailyRate * 12 / 365) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.25 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 1.69 * .10) }}</td><td></td><td>{{ $money($dailyRate / 8 * 2.60 * .10) }}</td><td></td><td>{{ $money($monthlyAfterAdmin * 12 / 365 / 8) }}</td><td></td><td>200.00</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach($guards as $guard)
+                    @php
+                        $v = $guard['billing'];
+                        $daily = (float)$guard['billing_daily_rate'];
+                        $monthly = (float)$guard['contract_cost']['contract_cost_excluding_retirement'];
+                        $retirement = (float)$guard['contract_cost']['retirement_contribution'];
+                        $additionalDays = (float)($v['additional_post_days'] ?? 0);
+                        $additionalAmount = (float)($v['additional_post_amount'] ?? 0);
+                        $deductionHours = (float)($guard['late_hours'] ?? 0) + (float)($guard['undertime_hours'] ?? 0);
+                        $penaltyHours = (float)($v['penalty_hours'] ?? 0);
+                        $penaltyRate = 200.00;
+                        $penaltyAmount = (float)($v['penalty_amount'] ?? 0);
+                        $accountingBase = (float)$v['half_month_rate'] + $additionalAmount - (float)$v['deductions'] - $penaltyAmount + (float)$v['retirement_half'];
+                        $accountingOt = (float)$v['regular_ot'] + (float)$v['special_ot'] + (float)$v['holiday_ot'] + (float)$v['regular_nd'] + (float)$v['special_nd'] + (float)$v['holiday_nd'];
+                    @endphp
+                    <tr>
+                        <td class="left">{{ $loop->first ? $branch['branch_name'] : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ number_format((float)($v['guard_count'] ?? 1),0) }}</td>
+                        <td>{{ $money($v['half_month_rate']) }}</td><td>{{ $hours($additionalDays) }}</td><td>{{ $money($daily * 12 / 365) }}</td>
+                        <td>{{ $hours($guard['regular_ot_hours']) }}</td><td>{{ $money($v['regular_ot']) }}</td><td>{{ $hours($guard['sunday_special_ot_hours']) }}</td><td>{{ $money($v['special_ot']) }}</td><td>{{ $hours($guard['regular_holiday_ot_hours']) }}</td><td>{{ $money($v['holiday_ot']) }}</td>
+                        <td>{{ $hours($guard['regular_nd_hours']) }}</td><td>{{ $money($v['regular_nd']) }}</td><td>{{ $hours($guard['sunday_special_nd_hours']) }}</td><td>{{ $money($v['special_nd']) }}</td><td>{{ $hours($guard['legal_holiday_nd_hours']) }}</td><td>{{ $money($v['holiday_nd']) }}</td>
+                        <td>{{ $hours($deductionHours) }}</td><td>{{ $money($v['deductions']) }}</td><td>{{ $money($v['before_fee']) }}</td><td>{{ $money($v['agency_fee']) }}</td><td>{{ $money($v['ewt']) }}</td><td>{{ $money($v['retirement_half']) }}</td><td>{{ $money($v['gross']) }}</td><td>{{ $hours($penaltyHours) }}</td><td>{{ $money($penaltyRate) }}</td><td>{{ $money($v['net_payable']) }}</td><td></td>
+                        <td>{{ $money($accountingBase) }}</td><td>{{ $money($accountingOt) }}</td><td>{{ $money($v['agency_fee']) }}</td><td>{{ $money(-1 * (float)$v['ewt']) }}</td><td></td><td></td>
+                    </tr>
+                @endforeach
+                    <tr class="total">
+                        <td class="left">TOTAL</td><td></td><td>{{ number_format((float)$sum['guard_count'],0) }}</td><td>{{ $money($sum['half_month_rate']) }}</td><td></td><td></td>
+                        <td>{{ $hours($totalRegularOtHours) }}</td><td>{{ $money($sum['regular_ot']) }}</td><td>{{ $hours($totalSpecialOtHours) }}</td><td>{{ $money($sum['special_ot']) }}</td><td>{{ $hours($totalHolidayOtHours) }}</td><td>{{ $money($sum['holiday_ot']) }}</td>
+                        <td>{{ $hours($totalRegularNdHours) }}</td><td>{{ $money($sum['regular_nd']) }}</td><td>{{ $hours($totalSpecialNdHours) }}</td><td>{{ $money($sum['special_nd']) }}</td><td>{{ $hours($totalHolidayNdHours) }}</td><td>{{ $money($sum['holiday_nd']) }}</td>
+                        <td>{{ $hours($sum['deduction_hours']) }}</td><td>{{ $money($sum['deductions']) }}</td><td>{{ $money($sum['before_fee']) }}</td><td>{{ $money($sum['agency_fee']) }}</td><td>{{ $money($sum['ewt']) }}</td><td>{{ $money($sum['retirement_half']) }}</td><td>{{ $money($sum['gross']) }}</td><td>{{ $hours($sum['penalty_hours'] ?? 0) }}</td><td>{{ $money(200) }}</td><td>{{ $money($sum['net_payable']) }}</td><td></td>
+                        <td>{{ $money($sum['half_month_rate'] + $sum['additional_post_amount'] - $sum['deductions'] - $sum['penalty_amount'] + $sum['retirement_half']) }}</td><td>{{ $money($sum['regular_ot'] + $sum['special_ot'] + $sum['holiday_ot'] + $sum['regular_nd'] + $sum['special_nd'] + $sum['holiday_nd']) }}</td><td>{{ $money($sum['agency_fee']) }}</td><td>{{ $money(-1 * $sum['ewt']) }}</td><td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="summary">
+                <tr><td>GROSS</td><td>{{ $money($sum['gross']) }}</td></tr>
+                <tr><td>EWT</td><td>{{ $money($sum['ewt']) }}</td></tr>
+                <tr><td>NET</td><td>{{ $money($sum['net_payable']) }}</td></tr>
+            </table>
+            <p class="note"><strong>Branch:</strong> {{ $branch['branch_name'] }}. This statement contains only the guards assigned to this branch. Totals are calculated independently for this branch. Additional posts and penalty charges remain zero unless approved source inputs are available.</p>
+        </section>
+    @endforeach
 @endforeach
-@endforeach
-<tr class="total"><td class="left" colspan="5">AREA TOTAL ({{ $area['totals']['guard_count'] }} guard assignments)</td>
-<td>{{ number_format($sum['base'],2) }}</td><td></td><td>{{ number_format($sum['ot_reg'],2) }}</td>
-<td></td><td>{{ number_format($sum['ot_special'],2) }}</td><td></td><td>{{ number_format($sum['ot_legal'],2) }}</td>
-<td></td><td>{{ number_format($sum['nd_reg'],2) }}</td><td></td><td>{{ number_format($sum['nd_special'],2) }}</td>
-<td></td><td>{{ number_format($sum['nd_legal'],2) }}</td><td></td><td>{{ number_format($sum['deduction'],2) }}</td>
-<td>{{ number_format($sum['subtotal'],2) }}</td><td>{{ number_format($sum['admin'],2) }}</td>
-<td>{{ number_format($sum['ewt'],2) }}</td><td>{{ number_format($sum['retirement'],2) }}</td>
-<td>{{ number_format($sum['grand'],2) }}</td></tr>
-</tbody></table></div>
-<p class="note"><strong>Preview only — not an issued invoice.</strong>
-Workbook-derived rates: regular OT 125%, Sunday/special OT 169%, legal holiday OT 260%, ND at 10% of the corresponding OT rate, admin 20%, EWT 2% of admin, retirement fund at half-month.
-This preview assumes one half-month contract base per guard/branch assignment and no additional-post, absence, penalty, 5%-of-admin, or client-specific adjustments. These items must be confirmed before final billing. VAT is not included.</p>
-</section>
-@endforeach
-</body></html>
+</body>
+</html>

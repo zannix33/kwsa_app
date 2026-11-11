@@ -24,37 +24,37 @@
     @endif
 
     <section class="card mb-4">
-        <div class="card-header">Start a billing worksheet</div>
+        <div class="card-header">Process billing by client, company, area and branch</div>
         <div class="card-body">
             @if($closedPeriods->isEmpty())
                 <p>No closed payroll periods are available for billing.</p>
+            @elseif($clients->isEmpty())
+                <p>No clients are available.</p>
             @else
-                <form method="POST" action="{{ route('billing.preview.start') }}"  target="_blank">
+                <p>Select a client and a closed payroll period. The system creates a separate draft bill for every assigned branch belonging to that client. Each branch has its own bill and total.</p>
+                <form method="POST" action="{{ route('billing.generate') }}">
                     @csrf
+                    <div class="form-group">
+                        <label for="client_id">Client</label>
+                        <select class="form-control" name="client_id" id="client_id" required>
+                            <option value="">Select a client</option>
+                            @foreach($clients as $client)
+                                <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="payroll_period_id">Closed payroll period</label>
                         <select class="form-control" name="payroll_period_id" id="payroll_period_id" required>
                             <option value="">Select a closed period</option>
                             @foreach($closedPeriods as $period)
                                 <option value="{{ $period->id }}" {{ old('payroll_period_id') == $period->id ? 'selected' : '' }}>
-                                    {{ $period->name ?? ('Period #' . $period->id) }}
-                                    ({{ $period->date_from }} — {{ $period->date_to }})
+                                    {{ $period->name ?? ('Period #' . $period->id) }} ({{ $period->date_from }} — {{ $period->date_to }})
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="area_id">Area</label>
-                        <select class="form-control" name="area_id" id="area_id" required>
-                            <option value="">Select an area</option>
-                            @foreach(\App\Models\Area::orderBy('name')->get() as $area)
-                                <option value="{{ $area->id }}" {{ old('area_id') == $area->id ? 'selected' : '' }}>
-                                    {{ $area->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Open Excel Preview</button>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Process a separate draft bill for every assigned branch under this client?')">Process Billing</button>
                 </form>
             @endif
         </div>
@@ -65,23 +65,26 @@
         <div class="card-body table-responsive">
             <table class="table table-striped">
                 <thead>
-                    <tr><th>Bill</th><th>Client</th><th>Area</th><th>Payroll period</th><th>Status</th><th></th></tr>
+                    <tr><th>Bill</th><th>Client</th><th>Company</th><th>Area</th><th>Branch</th><th>Payroll period</th><th>Status</th><th></th></tr>
                 </thead>
                 <tbody>
                 @forelse($billings as $billing)
                     <tr>
                         <td>#{{ $billing->id }}</td>
                         <td>{{ optional($billing->client)->name ?? '—' }}</td>
+                        <td>{{ optional($billing->company)->name ?? '—' }}</td>
                         <td>{{ optional($billing->area)->name ?? '—' }}</td>
+                        <td>{{ optional($billing->branch)->name ?? '—' }}</td>
                         <td>{{ optional($billing->payrollPeriod)->name ?? ('Period #' . $billing->payroll_period_id) }}</td>
                         <td>{{ $billing->status ?? '—' }}</td>
                         <td>
                             <a href="{{ route('billing.show', $billing) }}">View</a> |
-                            <a href="{{ route('billing.print', $billing) }}">Print</a>
+                            <a href="{{ route('billing.print', $billing) }}">Print</a> |
+                            <a href="{{ route('billing.excel-preview', ['period' => $billing->payroll_period_id, 'company_id' => $billing->company_id, 'area_id' => $billing->area_id, 'branch_id' => $billing->branch_id]) }}">Excel preview</a>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">No bills have been generated yet.</td></tr>
+                    <tr><td colspan="8">No bills have been generated yet.</td></tr>
                 @endforelse
                 </tbody>
             </table>

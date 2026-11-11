@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Billing;
+use App\Models\Client;
 use App\Models\PayrollPeriod;
 use App\Services\Billing\BillingGenerationService;
 use Illuminate\Http\Request;
@@ -12,15 +13,16 @@ class BillingController extends Controller
 {
     public function index()
     {
+        $clients = Client::orderBy('name')->get();
         $closedPeriods = PayrollPeriod::whereRaw('LOWER(status) = ?', ['closed'])
             ->orderByDesc('date_from')
             ->get();
 
-        $billings = Billing::with(['client', 'company', 'area', 'payrollPeriod'])
+        $billings = Billing::with(['client', 'company', 'area', 'branch', 'payrollPeriod'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return view('pages.billing.index', compact('closedPeriods', 'billings'));
+        return view('pages.billing.index', compact('closedPeriods', 'billings', 'clients'));
     }
 
     /**
@@ -47,14 +49,16 @@ class BillingController extends Controller
     {
         $validated = $request->validate([
             'payroll_period_id' => ['required', 'integer', 'exists:payroll_periods,id'],
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
         ]);
 
         $period = PayrollPeriod::findOrFail($validated['payroll_period_id']);
         $this->ensurePeriodClosed($period);
 
-        $result = $billingGenerationService->generate($period);
+        $result = $billingGenerationService->generate($period, (int) $validated['client_id']);
         $createdBills = $result['billings'];
-        $redirect = redirect()->route('billing.index')->with('success', $createdBills->count() . ' draft bill(s) generated successfully.');
+        $redirect = redirect()->route('billing.index')
+            ->with('success', $createdBills->count() . ' separate draft bill(s) generated for the selected client. Each branch has its own bill and total.');
         if (!empty($result['unassigned_branches'])) {
             $redirect->with('unassigned_branches', $result['unassigned_branches']);
         }
@@ -63,14 +67,14 @@ class BillingController extends Controller
 
     public function show(Billing $billing)
     {
-        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'items.branch', 'items.user', 'items.payrollItem']);
+        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'branch', 'items.branch', 'items.user', 'items.payrollItem']);
         return view('pages.billing.show', compact('billing'));
     }
 
     /** Show a print-optimized version of a bill. */
     public function print(Billing $billing)
     {
-        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'items.branch', 'items.user']);
+        $billing->load(['client', 'company', 'area', 'payrollPeriod', 'branch', 'items.branch', 'items.user']);
         return view('pages.billing.print', compact('billing'));
     }
 

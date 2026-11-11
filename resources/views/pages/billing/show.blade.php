@@ -23,6 +23,7 @@
             <div class="row">
                 <div class="col-md-6 mb-3"><strong>Client</strong><br>{{ optional($billing->client)->name ?: '—' }}</div>
                 <div class="col-md-6 mb-3"><strong>Area</strong><br>{{ optional($billing->area)->name ?: '—' }}</div>
+                <div class="col-md-6 mb-3"><strong>Branch</strong><br>{{ optional($billing->branch)->name ?: '—' }}</div>
                 <div class="col-md-6 mb-3"><strong>Payroll Period</strong><br>
                     {{ optional($billing->payrollPeriod)->name ?: '—' }}
                     @if ($billing->payrollPeriod)

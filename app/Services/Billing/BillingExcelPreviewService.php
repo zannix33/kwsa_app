@@ -18,7 +18,9 @@ class BillingExcelPreviewService
     {
         $data = $this->source->buildForPeriod($period); // validates closed period
         $data['areas'] = array_map(function ($area) {
-            $area['branches'] = array_values(array_filter($area['branches'], function ($branch) { return !empty($branch['company_id']); }));
+            $area['branches'] = array_values(array_filter($area['branches'], function ($branch) {
+                return !empty($branch['company_id']) && !empty($branch['guards']);
+            }));
             return $area;
         }, $data['areas']);
         foreach ($data['areas'] as &$area) {
@@ -94,6 +96,16 @@ class BillingExcelPreviewService
                         $branch['billing_totals'][$key] += $value;
                     }
                 }
+                foreach ($branch['billing_totals'] as $key => $value) {
+                    if ($key !== 'guard_count') {
+                        $branch['billing_totals'][$key] = round((float) $value, 2);
+                    }
+                }
+            }
+            foreach ($area['billing_totals'] as $key => $value) {
+                if ($key !== 'guard_count') {
+                    $area['billing_totals'][$key] = round((float) $value, 2);
+                }
             }
         }
         unset($area, $branch, $guard);
@@ -105,7 +117,7 @@ class BillingExcelPreviewService
         return array_fill_keys([
             'guard_count', 'half_month_rate', 'additional_post_amount', 'regular_ot',
             'special_ot', 'holiday_ot', 'regular_nd', 'special_nd', 'holiday_nd',
-            'deductions', 'before_fee', 'agency_fee', 'vat', 'ewt', 'retirement_half',
+            'deduction_hours', 'deductions', 'before_fee', 'agency_fee', 'vat', 'ewt', 'retirement_half',
             'gross', 'penalty_amount', 'net_payable',
         ], 0);
     }

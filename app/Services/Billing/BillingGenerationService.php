@@ -5,7 +5,6 @@ namespace App\Services\Billing;
 use App\Models\Billing;
 use App\Models\BillingItem;
 use App\Models\PayrollPeriod;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,38 +13,55 @@ class BillingGenerationService
 {
     public function __construct(private BillingExcelPreviewService $preview) {}
 
-    public function generate(PayrollPeriod $period): array
+    public function generate(PayrollPeriod $period, int $clientId): array
     {
         if (strtolower(trim((string) $period->status)) !== 'closed') {
             throw ValidationException::withMessages(['billing' => 'Billing can only be generated for a Closed payroll period.']);
         }
 
         $data = $this->preview->build($period);
+        $data['areas'] = array_values(array_filter($data['areas'], function ($area) use ($clientId) { return (int) ($area['client_id'] ?? 0) === $clientId; }));
         $unassigned = $data['unassigned_branches'] ?? [];
         $groups = [];
         foreach ($data['areas'] as $area) {
             foreach ($area['branches'] as $branch) {
                 if (empty($branch['company_id'])) continue;
-                $key = $area['area_id'].'|'.$branch['company_id'];
-                if (!isset($groups[$key])) $groups[$key] = ['area' => $area, 'company_id' => $branch['company_id'], 'company_name' => $branch['company_name'], 'branches' => []];
-                $groups[$key]['branches'][] = $branch;
+
+                $key = $area['area_id'].'|'.$branch['company_id'].'|'.$branch['branch_id'];
+                $groups[$key] = [
+                    'area' => $area,
+                    'company_id' => $branch['company_id'],
+                    'company_name' => $branch['company_name'],
+                    'branch' => $branch,
+                ];
             }
         }
+
+        if (empty($groups)) { throw ValidationException::withMessages(['billing' => 'No billable branches were found for this client and payroll period.']); }
 
         return DB::transaction(function () use ($groups, $period, $unassigned) {
             foreach ($groups as $group) {
                 $exists = Billing::where('area_id', $group['area']['area_id'])
                     ->where('company_id', $group['company_id'])
-                    ->where('payroll_period_id', $period->id)->exists();
+                    ->where('payroll_period_id', $period->id)
+                    ->where(function ($query) use ($group) {
+                        // Also protect against a legacy area/company bill that
+                        // predates branch-level billing and has a null branch_id.
+                        $query->where('branch_id', $group['branch']['branch_id'])
+                            ->orWhereNull('branch_id');
+                    })
+                    ->exists();
                 if ($exists) {
-                    throw ValidationException::withMessages(['billing' => "A bill already exists for {$group['area']['area_name']} / {$group['company_name']} in this payroll period."]);
+                    throw ValidationException::withMessages(['billing' => "A bill already exists for {$group['area']['area_name']} / {$group['branch']['branch_name']} in this payroll period."]);
                 }
             }
 
             $created = collect();
             foreach ($groups as $group) {
-                $rows = collect($group['branches'])->flatMap(function ($branch) {
-                    return collect($branch['guards'])->map(function ($guard) use ($branch) { $guard['_branch_id'] = $branch['branch_id']; return $guard; });
+                $branch = $group['branch'];
+                $rows = collect($branch['guards'])->map(function ($guard) use ($branch) {
+                    $guard['_branch_id'] = $branch['branch_id'];
+                    return $guard;
                 });
                 $sum = function ($key) use ($rows) { return round($rows->sum(function ($g) use ($key) { return (float) ($g['billing'][$key] ?? 0); }), 2); };
                 $subtotal = $sum('before_fee'); $fee = $sum('agency_fee'); $ewt = $sum('ewt');
@@ -53,13 +69,15 @@ class BillingGenerationService
                 $total = $sum('net_payable');
                 $billing = Billing::create([
                     'client_id' => $group['area']['client_id'], 'company_id' => $group['company_id'],
-                    'area_id' => $group['area']['area_id'], 'payroll_period_id' => $period->id,
+                    'area_id' => $group['area']['area_id'], 'branch_id' => $branch['branch_id'],
+                    'payroll_period_id' => $period->id,
                     'status' => 'draft', 'subtotal' => $subtotal, 'agency_fee_amount' => $fee,
                     'retirement_fund_amount' => $retirement, 'penalties_amount' => $penalty,
                     'ewt_amount' => $ewt, 'vat_amount' => $vat, 'total_amount' => $total,
                     'tax_type' => 'non_vat', 'calculation_snapshot' => [
                         'source' => 'excel_preview', 'company_id' => $group['company_id'],
-                        'company_name' => $group['company_name'], 'period_id' => $period->id,
+                        'company_name' => $group['company_name'], 'branch_id' => $branch['branch_id'],
+                        'branch_name' => $branch['branch_name'], 'period_id' => $period->id,
                         'guard_count' => $rows->count(), 'unassigned_branches_excluded' => $unassigned,
                         'premium_policy' => [
                             'client_id' => $group['area']['client_id'] ?? null,

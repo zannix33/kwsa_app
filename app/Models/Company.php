@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 class Company extends Model {
  use HasFactory;
- protected $fillable=['client_id','name','active'];
+ protected $fillable=['client_id','name','account_number','vat_registration_number','active'];
  public function client(){ return $this->belongsTo(Client::class); }
  public function branches(){ return $this->hasMany(Branch::class); }
 }

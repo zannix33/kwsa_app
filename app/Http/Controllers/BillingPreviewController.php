@@ -3,27 +3,31 @@
 namespace App\Http\Controllers;
 
 use App\Models\PayrollPeriod;
-use App\Services\Billing\BillingGuardBillingDataService;
+use App\Services\Billing\BillingExcelPreviewService;
 use Illuminate\Http\Request;
 
 class BillingPreviewController extends Controller
 {
-    public function show(Request $request, PayrollPeriod $period, BillingGuardBillingDataService $service)
+    public function show(Request $request, PayrollPeriod $period, BillingExcelPreviewService $service)
     {
-        $data = $service->buildForPeriod($period);
-
+        $data = $service->build($period);
         $areaId = $request->query('area_id');
         $areas = collect($data['areas']);
+
         if ($areaId !== null) {
-            $areas = $areas->filter(fn ($area) => (string) $area['area_id'] === (string) $areaId);
+            $areas = $areas->filter(function ($area) use ($areaId) {
+                return (string) $area['area_id'] === (string) $areaId;
+            });
         }
 
         abort_if($areas->isEmpty(), 404, 'No billing data for this area.');
 
-        // One printable statement per area, as in the supplied workbook.
+        // The preview renders one independent printable bill per branch.
         return view('pages.billing.excel-preview', [
+            'data' => $data,
             'period' => $data['period'],
             'areas' => $areas->values()->all(),
+            'company' => null,
         ]);
     }
 }
