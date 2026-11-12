@@ -9,6 +9,8 @@ use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use App\Models\DailyTimeRecord;
 use App\Models\PayrollRate;
+use App\Models\EmployeeAllowance;
+use App\Models\EmployeeReimbursement;
 use App\Services\PayrollItemService;
 use Illuminate\Support\Facades\DB;
 use App\Models\Loan;
@@ -131,17 +133,18 @@ class PayrollGenerationService
             |--------------------------------------------------------------------------
             */
 
-            $exists = Payroll::where(
-                'payroll_period_id',
-                $period->id
-            )
-                ->where(
-                    'user_id',
-                    $user->id
-                )
-                ->exists();
+            $existingPayroll = Payroll::where('payroll_period_id', $period->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
 
-            if ($exists) {
+            if ($existingPayroll) {
+                // Safely fill in newly assigned extras on an already-generated
+                // payroll, but never change a payroll that has been marked Paid.
+                if ($existingPayroll->status !== 'Paid') {
+                    $this->addAllowancesAndReimbursements($user, $period, $existingPayroll);
+                    PayrollItemService::recalculate($existingPayroll);
+                }
                 return;
             }
 
@@ -176,20 +179,44 @@ class PayrollGenerationService
                 'dtr_ids' => $dtrs->pluck('id')->all(),
             ]);
 
-            if ($dtrs->isEmpty()) {
+            // Allowances are paid per payroll period when their effective dates
+            // overlap this period. Reimbursements are matched by filed_date.
+            $allowances = EmployeeAllowance::with('allowanceType')
+                ->where('user_id', $user->id)
+                ->where('status', 'Active')
+                ->whereDate('effective_from', '<=', $period->date_to)
+                ->where(function ($query) use ($period) {
+                    $query->whereNull('effective_to')
+                        ->orWhereDate('effective_to', '>=', $period->date_from);
+                })
+                ->get();
+
+            $reimbursements = EmployeeReimbursement::where('user_id', $user->id)
+                ->whereNull('payroll_id')
+                ->where('status', 'Filed')
+                ->whereBetween('filed_date', [$period->date_from, $period->date_to])
+                ->lockForUpdate()
+                ->get();
+
+            // Do not skip employees who have payroll earnings from allowances or
+            // reimbursements even when they have no attendance records this period.
+            if ($dtrs->isEmpty() && $allowances->isEmpty() && $reimbursements->isEmpty()) {
                 return;
             }
 
             /*
             |--------------------------------------------------------------------------
-            | Calculate Payroll
+            | Calculate attendance-based payroll (when DTRs exist)
             |--------------------------------------------------------------------------
             */
 
-            $result = $this->calculator->calculate(
-                $user,
-                $dtrs
-            );
+            $result = $dtrs->isNotEmpty()
+                ? $this->calculator->calculate($user, $dtrs)
+                : [
+                    'rate_breakdown' => [],
+                    'earnings' => ['overall_pay' => 0],
+                    'deductions' => ['late' => 0, 'undertime' => 0, 'CB' => 0],
+                ];
 
             /*
             |--------------------------------------------------------------------------
@@ -394,16 +421,26 @@ class PayrollGenerationService
 
             /*
             |--------------------------------------------------------------------------
+            | Allowances and Reimbursements — additional payroll earnings
+            |--------------------------------------------------------------------------
+            */
+
+            $this->addAllowancesAndReimbursements($user, $period, $payroll);
+
+            /*
+            |--------------------------------------------------------------------------
             | Recalculate Totals
             |--------------------------------------------------------------------------
             */
 
-            // Loan deductions: SSS, Pag-IBIG, and Company
-            $this->applyLoanDeductions(
-                $user,
-                $period,
-                $payroll
-            );
+            // Loan deductions remain tied to attendance-based payroll.
+            if ($dtrs->isNotEmpty()) {
+                $this->applyLoanDeductions(
+                    $user,
+                    $period,
+                    $payroll
+                );
+            }
 
             // Recalculate payroll after all deductions are added.
             PayrollItemService::recalculate(
@@ -423,6 +460,63 @@ class PayrollGenerationService
                 'payroll_id' => $payroll->id
             ]);
         });
+    }
+
+    /**
+     * Add eligible period allowances and unassigned reimbursements exactly once.
+     */
+    protected function addAllowancesAndReimbursements(
+        User $user,
+        PayrollPeriod $period,
+        Payroll $payroll
+    ): void {
+        $allowances = EmployeeAllowance::with('allowanceType')
+            ->where('user_id', $user->id)
+            ->where('status', 'Active')
+            ->whereDate('effective_from', '<=', $period->date_to)
+            ->where(function ($query) use ($period) {
+                $query->whereNull('effective_to')
+                    ->orWhereDate('effective_to', '>=', $period->date_from);
+            })
+            ->get();
+
+        foreach ($allowances as $allowance) {
+            $code = 'ALLOWANCE-' . $allowance->id;
+            $alreadyAdded = $payroll->items()->where('code', $code)->exists();
+            if ($alreadyAdded) {
+                continue;
+            }
+
+            $allowanceName = optional($allowance->allowanceType)->name ?: 'Allowance';
+            PayrollItemService::earning(
+                $payroll,
+                $code,
+                $allowanceName . ' Allowance',
+                (float) $allowance->amount
+            );
+        }
+
+        $reimbursements = EmployeeReimbursement::where('user_id', $user->id)
+            ->whereNull('payroll_id')
+            ->where('status', 'Filed')
+            ->whereBetween('filed_date', [$period->date_from, $period->date_to])
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($reimbursements as $reimbursement) {
+            PayrollItemService::earning(
+                $payroll,
+                'REIMBURSEMENT',
+                'Reimbursement - ' . $reimbursement->category . ': ' . $reimbursement->description,
+                (float) $reimbursement->amount
+            );
+
+            $reimbursement->update([
+                'payroll_period_id' => $period->id,
+                'payroll_id' => $payroll->id,
+                'status' => 'Included',
+            ]);
+        }
     }
 
     /**
