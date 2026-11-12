@@ -43,9 +43,26 @@ class BillingExcelPreviewService
                     $eligible = (int) ($rankedGuard['attended_days'] ?? 0) > 0
                         && $eligiblePostCount < $branch['assigned_guard_count'];
                     $rankedGuard['is_contracted_post'] = $eligible;
+                    $rankedGuard['is_additional_post'] = false;
                     $rankedGuard['retirement_rank'] = $eligible ? ++$eligiblePostCount : null;
                 }
                 unset($rankedGuard);
+
+                // One additional-post guard is allowed per branch only when at
+                // least two guards worked and combined attendance exceeds 15 days.
+                $guardsOnDuty = count(array_filter($branch['guards'], fn ($g) => (int) ($g['attended_days'] ?? 0) > 0));
+                $totalAttendedDays = array_sum(array_map(fn ($g) => (int) ($g['attended_days'] ?? 0), $branch['guards']));
+                $additionalPostEligible = $guardsOnDuty >= 2 && $totalAttendedDays > 15;
+                if ($additionalPostEligible) {
+                    foreach ($branch['guards'] as &$candidateGuard) {
+                        if (!(bool) ($candidateGuard['is_contracted_post'] ?? false)
+                            && (int) ($candidateGuard['attended_days'] ?? 0) > 0) {
+                            $candidateGuard['is_additional_post'] = true;
+                            break; // guards are already ranked; exactly one extra guard
+                        }
+                    }
+                    unset($candidateGuard);
+                }
 
                 foreach ($branch['guards'] as &$guard) {
                     $daily = (float) $guard['billing_daily_rate'];
@@ -53,7 +70,8 @@ class BillingExcelPreviewService
                     $retirement = (float) $guard['contract_cost']['retirement_contribution'];
                     $isContractedPost = (bool) ($guard['is_contracted_post'] ?? false);
                     $halfMonth = $isContractedPost ? $monthly / 2 : 0.0;
-                    $additionalPostDays = $isContractedPost ? 0.0 : (float) ($guard['attended_days'] ?? 0);
+                    $isAdditionalPost = (bool) ($guard['is_additional_post'] ?? false);
+                    $additionalPostDays = $isAdditionalPost ? (float) ($guard['attended_days'] ?? 0) : 0.0;
                     $additionalPostDailyRate = $monthly * 12 / 365; // workbook's additional-post daily rate
                     $applyOvertimePremium = (bool) ($area['apply_overtime_rate'] ?? true);
                     $applyNightDiffPremium = (bool) ($area['apply_night_diff_rate'] ?? true);
@@ -92,6 +110,7 @@ class BillingExcelPreviewService
                         ],
                         'guard_count' => $isContractedPost ? 1 : 0,
                         'is_contracted_post' => $isContractedPost,
+                        'is_additional_post' => $isAdditionalPost,
                         'retirement_rank' => $guard['retirement_rank'] ?? null,
                         'half_month_rate' => round($halfMonth, 2),
                         'additional_post_days' => $additionalPostDays,
