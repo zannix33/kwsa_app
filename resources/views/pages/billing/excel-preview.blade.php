@@ -163,7 +163,7 @@
                         $accountingOt = (float)$v['regular_ot'] + (float)$v['special_ot'] + (float)$v['holiday_ot'] + (float)$v['regular_nd'] + (float)$v['special_nd'] + (float)$v['holiday_nd'];
                     @endphp
                     <tr>
-                        <td class="left">{{ $loop->first ? $branch['branch_name'] : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ number_format((float)($v['guard_count'] ?? 1),0) }}</td>
+                        <td class="left">{{ $loop->first ? $branch['branch_name'] : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ (float)($v['guard_count'] ?? 1) > 0 ? number_format((float)$v['guard_count'], 0) : '' }}</td>
                         <td>{{ $money($v['half_month_rate']) }}</td><td>{{ $hours($additionalDays) }}</td><td>{{ $money($v['additional_post_amount'] ?? 0) }}</td>
                         <td>{{ $hours($guard['regular_ot_hours']) }}</td><td>{{ $money($v['regular_ot']) }}</td><td>{{ $hours($guard['sunday_special_ot_hours']) }}</td><td>{{ $money($v['special_ot']) }}</td><td>{{ $hours($guard['regular_holiday_ot_hours']) }}</td><td>{{ $money($v['holiday_ot']) }}</td>
                         <td>{{ $hours($guard['regular_nd_hours']) }}</td><td>{{ $money($v['regular_nd']) }}</td><td>{{ $hours($guard['sunday_special_nd_hours']) }}</td><td>{{ $money($v['special_nd']) }}</td><td>{{ $hours($guard['legal_holiday_nd_hours']) }}</td><td>{{ $money($v['holiday_nd']) }}</td>

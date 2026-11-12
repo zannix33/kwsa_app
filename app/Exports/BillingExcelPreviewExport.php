@@ -185,7 +185,8 @@ class BillingExcelPreviewExport
 
             $sheet->setCellValue("A{$row}", $branchName);
             $sheet->setCellValue("B{$row}", $guard['guard_name'] ?? '');
-            $sheet->setCellValue("C{$row}", (float) ($billing['guard_count'] ?? 1));
+            $guardCount = (float) ($billing['guard_count'] ?? 1);
+            $sheet->setCellValue("C{$row}", $guardCount > 0 ? $guardCount : null);
             $sheet->setCellValue("D{$row}", "=\$D\$13*C{$row}");
             $sheet->setCellValue("E{$row}", (float) ($billing['additional_post_days'] ?? 0));
             $sheet->setCellValue("F{$row}", "=\$F\$13*E{$row}");
