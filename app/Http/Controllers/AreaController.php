@@ -122,14 +122,17 @@ class AreaController extends Controller
      */
     public function guards(Area $area)
     {
-        return response()->json(
+        $guards = $area->users()->with('position')->orderBy('name')->get();
+        $companyAssignments = \Illuminate\Support\Facades\DB::table('area_user_company')
+            ->join('companies', 'companies.id', '=', 'area_user_company.company_id')
+            ->where('area_user_company.area_id', $area->id)
+            ->select('area_user_company.user_id', 'companies.name')
+            ->orderBy('companies.name')->get()->groupBy('user_id');
 
-            $area->users()
-                ->with('position')
-                ->orderBy('name')
-                ->get()
-
-        );
+        return response()->json($guards->map(function ($guard) use ($companyAssignments) {
+            $guard->assigned_companies = ($companyAssignments->get($guard->id) ?? collect())->pluck('name')->values();
+            return $guard;
+        }));
     }
 
     /**
@@ -140,23 +143,38 @@ class AreaController extends Controller
         $validated = $request->validate([
             'area_id' => 'required|exists:areas,id',
             'user_id' => 'required|exists:users,id',
+            'company_ids' => 'required|array|min:1',
+            'company_ids.*' => 'required|integer|distinct|exists:companies,id',
         ]);
 
         $guard = \App\Models\User::with('position')->findOrFail($validated['user_id']);
-        if (!$guard->position || !in_array($guard->position->name, ['Security Guard', 'Security Officer', 'Roving Guard'], true)) {
+        if (!$this->isEligibleAreaEmployee($guard)) {
             return response()->json([
-                'message' => 'Only Security Guard, Security Officer, and Roving Guard employees can be assigned.',
-                'errors' => ['user_id' => ['Select an employee with an eligible security position.']],
+                'message' => 'Only Area Supervisors, Security Officers, Roving Guards, and Security Guards with LESP category SO or SM can be assigned to an area.',
+                'errors' => ['user_id' => ['Select an employee with an eligible area-based position.']],
             ], 422);
         }
 
         $area = Area::findOrFail($validated['area_id']);
+        $companyIds = \App\Models\Company::where('client_id', $area->client_id)
+            ->where('active', 1)->whereIn('id', $validated['company_ids'])->pluck('id')->all();
+        if (count($companyIds) !== count($validated['company_ids'])) {
+            return response()->json(['message' => 'One or more selected companies do not belong to this client.', 'errors' => ['company_ids' => ['Select companies belonging to this client.']]], 422);
+        }
 
-        $area->users()->syncWithoutDetaching([
+        $existingAreaIds = $guard->areas()->pluck('areas.id');
+        if ($existingAreaIds->isNotEmpty() && !$existingAreaIds->contains((int) $area->id)) {
+            return response()->json(['message' => 'This employee is already assigned to another area. Remove that area assignment first.', 'errors' => ['user_id' => ['An employee can only be assigned to one area.']]], 422);
+        }
 
-            $validated['user_id']
-
-        ]);
+        $area->users()->syncWithoutDetaching([$guard->id]);
+        $area->users()->updateExistingPivot($guard->id, []);
+        foreach ($companyIds as $companyId) {
+            \Illuminate\Support\Facades\DB::table('area_user_company')->updateOrInsert(
+                ['area_id' => $area->id, 'user_id' => $guard->id, 'company_id' => $companyId],
+                ['updated_at' => now(), 'created_at' => now()]
+            );
+        }
 
         return response()->json([
 
@@ -178,7 +196,7 @@ class AreaController extends Controller
         ]);
 
         $guard = \App\Models\User::with('position')->findOrFail($validated['user_id']);
-        if (!$guard->position || !in_array($guard->position->name, ['Security Guard', 'Security Officer', 'Roving Guard'], true)) {
+        if (!$this->isEligibleAreaEmployee($guard)) {
             return response()->json([
                 'message' => 'Only Security Guard, Security Officer, and Roving Guard employees can be assigned.',
                 'errors' => ['user_id' => ['Select an employee with an eligible security position.']],
@@ -209,8 +227,14 @@ class AreaController extends Controller
 
             \App\Models\User::with('position')
                 ->whereNotIn('id', $assigned)
-                ->whereHas('position', function ($query) {
-                    $query->whereIn('name', ['Security Guard', 'Security Officer', 'Roving Guard']);
+                ->where(function ($query) {
+                    $query->whereHas('position', function ($position) {
+                        $position->whereIn('name', ['Area Supervisor', 'Security Officer', 'Roving Guard']);
+                    })->orWhere(function ($securityGuard) {
+                        $securityGuard->whereHas('position', function ($position) {
+                            $position->where('name', 'Security Guard');
+                        })->whereIn('lesp_category', ['SO', 'SM']);
+                    });
                 })
                 ->orderBy('name')
                 ->get([
@@ -221,6 +245,13 @@ class AreaController extends Controller
                 ])
 
         );
+    }
+
+    private function isEligibleAreaEmployee($user): bool
+    {
+        $position = optional($user->position)->name;
+        return in_array($position, ['Area Supervisor', 'Security Officer', 'Roving Guard'], true)
+            || ($position === 'Security Guard' && in_array($user->lesp_category, ['SO', 'SM'], true));
     }
 
     public function indexByCompany(Client $company)

@@ -10,6 +10,7 @@ use App\Models\PayrollPeriod;
 use App\Models\User;
 use App\Models\Area;
 use App\Models\Branch;
+use App\Models\Company;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -24,7 +25,7 @@ class DailyTimeRecordController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DailyTimeRecord::with(['user', 'area', 'branch', 'payroll'])
+        $query = DailyTimeRecord::with(['user', 'area', 'branch', 'company', 'payroll'])
             ->orderByDesc('work_date')->orderByDesc('id');
 
         if ($request->filled('employee')) {
@@ -43,7 +44,7 @@ class DailyTimeRecordController extends Controller
 
     public function edit(DailyTimeRecord $dtr)
     {
-        $dtr->load(['user', 'area', 'branch', 'payroll']);
+        $dtr->load(['user', 'area', 'branch', 'company', 'payroll']);
         if ($dtr->payroll && strtolower($dtr->payroll->status) === 'paid') {
             return redirect()->route('dtr.index')->with('error', 'This DTR belongs to a paid payroll and cannot be edited.');
         }
@@ -51,7 +52,14 @@ class DailyTimeRecordController extends Controller
         $branches = Branch::when($dtr->area_id, function ($query) use ($dtr) {
             $query->where('area_id', $dtr->area_id);
         })->orderBy('name')->get();
-        return view('pages.dtr.edit', compact('dtr', 'areas', 'branches'));
+        $companies = DB::table('area_user_company')
+            ->join('companies', 'companies.id', '=', 'area_user_company.company_id')
+            ->where('area_user_company.user_id', $dtr->user_id)
+            ->where('area_user_company.area_id', $dtr->area_id)
+            ->where('companies.active', 1)
+            ->orderBy('companies.name')
+            ->get(['companies.id', 'companies.name']);
+        return view('pages.dtr.edit', compact('dtr', 'areas', 'branches', 'companies'));
     }
 
     public function update(Request $request, DailyTimeRecord $dtr)
@@ -60,6 +68,7 @@ class DailyTimeRecordController extends Controller
             'work_date' => 'required|date',
             'area_id' => 'required|exists:areas,id',
             'branch_id' => 'nullable|exists:branches,id',
+            'company_id' => 'nullable|exists:companies,id',
             'operation_start' => 'required|date_format:H:i',
             'operation_end' => 'required|date_format:H:i',
             'time_in' => 'required|date_format:H:i',
@@ -69,7 +78,24 @@ class DailyTimeRecordController extends Controller
             'reason' => 'required|string|max:1000',
         ]);
 
-        return DB::transaction(function () use ($request, $dtr) {
+        $employee = $dtr->user;
+        $areaId = (int) $request->area_id;
+        if (!$employee->areas()->where('areas.id', $areaId)->exists()) {
+            return back()->withInput()->withErrors(['area_id' => 'The employee is not assigned to the selected area.']);
+        }
+        $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $companyId = $request->filled('company_id') ? (int) $request->company_id : null;
+        if ($branchId) {
+            $branch = Branch::whereKey($branchId)->where('area_id', $areaId)->first();
+            if (!$branch || !$employee->branches()->where('branches.id', $branchId)->exists()) {
+                return back()->withInput()->withErrors(['branch_id' => 'The selected branch is not assigned to this employee in the selected area.']);
+            }
+            $companyId = null; // Branch billing continues to resolve its company through the branch.
+        } elseif (!$companyId || !DB::table('area_user_company')->where('user_id', $employee->id)->where('area_id', $areaId)->where('company_id', $companyId)->exists()) {
+            return back()->withInput()->withErrors(['company_id' => 'Select a company assigned to this employee in the selected area.']);
+        }
+
+        return DB::transaction(function () use ($request, $dtr, $companyId) {
             $dtr = DailyTimeRecord::whereKey($dtr->id)->lockForUpdate()->firstOrFail();
             $payroll = $dtr->payroll_id ? Payroll::find($dtr->payroll_id) : null;
             if ($payroll && strtolower($payroll->status) === 'paid') {
@@ -86,7 +112,7 @@ class DailyTimeRecordController extends Controller
             }
 
             $before = $dtr->only([
-                'work_date','area_id','branch_id','operation_start','operation_end',
+                'work_date','area_id','branch_id','company_id','operation_start','operation_end',
                 'time_in','time_out','break_minutes','is_rest_day','is_holiday',
                 'special_holiday','is_extended_hours','remarks','regular_hours',
                 'overtime_hours','extended_hours','night_differential_hours',
@@ -99,6 +125,7 @@ class DailyTimeRecordController extends Controller
             ]);
             $calculated = $this->calculateDtr($record);
             $dtr->fill([
+                'company_id' => $companyId,
                 'work_date' => $record['work_date'],
                 'area_id' => $record['area_id'],
                 'branch_id' => $record['branch_id'] ?: null,
@@ -301,12 +328,40 @@ class DailyTimeRecordController extends Controller
             'records.*.work_date' => 'required|date',
             'records.*.area_id' => 'required|exists:areas,id',
             'records.*.branch_id' => 'nullable|exists:branches,id',
+            'records.*.company_id' => 'nullable|exists:companies,id',
             'records.*.operation_start' => 'required|date_format:H:i',
             'records.*.operation_end' => 'required|date_format:H:i',
             'records.*.time_in' => 'required|date_format:H:i',
             'records.*.time_out' => 'required|date_format:H:i',
             'records.*.break_minutes' => 'nullable|numeric|min:0',
         ]);
+
+        $employee = User::findOrFail($request->user_id);
+        foreach ($records as $index => &$record) {
+            $areaId = (int) $record['area_id'];
+            if (!$employee->areas()->where('areas.id', $areaId)->exists()) {
+                return back()->withInput()->withErrors(["records.{$index}.area_id" => 'The employee is not assigned to the selected area.']);
+            }
+            $branchId = !empty($record['branch_id']) ? (int) $record['branch_id'] : null;
+            if ($branchId) {
+                $branch = Branch::whereKey($branchId)->where('area_id', $areaId)->first();
+                if (!$branch || !$employee->branches()->where('branches.id', $branchId)->exists()) {
+                    return back()->withInput()->withErrors(["records.{$index}.branch_id" => 'The selected branch is not assigned to this employee in the selected area.']);
+                }
+                $record['company_id'] = null; // Branch billing resolves the company through the branch.
+            } else {
+                if (!$employee->areas()->where('areas.id', $areaId)->exists()) {
+                    return back()->withInput()->withErrors(["records.{$index}.area_id" => 'The employee is not assigned to the selected area.']);
+                }
+                $companyId = !empty($record['company_id']) ? (int) $record['company_id'] : null;
+                if (!$companyId || !DB::table('area_user_company')->where('user_id', $employee->id)->where('area_id', $areaId)->where('company_id', $companyId)->exists()) {
+                    return back()->withInput()->withErrors(["records.{$index}.company_id" => 'Select a company assigned to this employee in the selected area.']);
+                }
+                $record['company_id'] = $companyId;
+            }
+        }
+        unset($record);
+        $request->merge(['records' => $records]);
 
         DB::transaction(function () use ($request) {
 
@@ -320,6 +375,7 @@ class DailyTimeRecordController extends Controller
                         'work_date'   => $record['work_date'],
                         'area_id'=>$record['area_id'],
                         'branch_id' => $record['branch_id'] ?? null,
+                        'company_id' => $record['company_id'] ?? null,
                     ],
                     [
                         'operation_start' =>
@@ -693,11 +749,18 @@ class DailyTimeRecordController extends Controller
         }
 
         return Area::whereIn('id', $areaIds)->orderBy('name')->get()
-            ->map(function ($area) use ($branchesByArea) {
+            ->map(function ($area) use ($branchesByArea, $employee) {
                 $area->setRelation(
                     'branches',
                     $branchesByArea->get($area->id, collect())->values()
                 );
+                $area->assigned_companies = DB::table('area_user_company')
+                    ->join('companies', 'companies.id', '=', 'area_user_company.company_id')
+                    ->where('area_user_company.area_id', $area->id)
+                    ->where('area_user_company.user_id', $employee->id)
+                    ->where('companies.active', 1)
+                    ->orderBy('companies.name')
+                    ->get(['companies.id', 'companies.name']);
 
                 return $area;
             })->values();

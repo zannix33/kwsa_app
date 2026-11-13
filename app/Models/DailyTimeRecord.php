@@ -17,6 +17,7 @@ class DailyTimeRecord extends Model
         'work_date',
         'branch_id',
         'area_id',
+        'company_id',
 
         'operation_start',
         'operation_end',
@@ -88,5 +89,10 @@ class DailyTimeRecord extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }

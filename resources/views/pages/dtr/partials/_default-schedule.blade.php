@@ -26,6 +26,13 @@
             </div>
 
             <div class="col-md-2">
+                <label>Default Company</label>
+                <select id="default_company" class="form-control">
+                    <option value="">Select Company</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
 
                 <label>Operation Start</label>
 
@@ -97,7 +104,7 @@
 
         </div>
 
-        <small class="form-text text-muted mt-2">Area and Branch, along with the schedule and attendance defaults, will be applied to every remaining row when you click Apply To All.</small>
+        <small class="form-text text-muted mt-2">Area, Branch and Company, along with the schedule and attendance defaults, will be applied to every remaining row when you click Apply To All.</small>
 
     </div>
 

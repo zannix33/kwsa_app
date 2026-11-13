@@ -53,6 +53,7 @@
                     <th width="220">Area</th>
 
                     <th width="220">Branch</th>
+                    <th width="220">Company (No Branch)</th>
 
                     <th>Operation Start</th>
                     <th>Operation End</th>
@@ -142,6 +143,12 @@
 
                             </select>
 
+                        </td>
+
+                        <td style="min-width: 180px;">
+                            <select name="records[{{ $loop->index }}][company_id]" class="form-control company-select">
+                                <option value="">Select Company</option>
+                            </select>
                         </td>
 
 

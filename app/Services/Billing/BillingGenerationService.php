@@ -28,6 +28,7 @@ class BillingGenerationService
             fn ($area) => (int) ($area['client_id'] ?? 0) === $clientId
         ));
         $unassigned = $data['unassigned_branches'] ?? [];
+        $unassignedPersonnel = $data['unassigned_personnel'] ?? [];
         $groups = [];
 
         foreach ($areas as $area) {
@@ -52,11 +53,11 @@ class BillingGenerationService
 
         if (empty($groups)) {
             throw ValidationException::withMessages([
-                'billing' => 'No billable branches were found for this client and payroll period.',
+                'billing' => 'No billable branch or area-personnel DTRs were found for this client and payroll period.',
             ]);
         }
 
-        return DB::transaction(function () use ($groups, $period, $unassigned) {
+        return DB::transaction(function () use ($groups, $period, $unassigned, $unassignedPersonnel) {
             $created = collect();
             $updated = collect();
             $skipped = collect();
@@ -110,6 +111,8 @@ class BillingGenerationService
                     'branch_names' => collect($group['branches'])->pluck('branch_name')->values()->all(),
                     'guard_count' => $rows->count(),
                     'unassigned_branches_excluded' => $unassigned,
+                    'unassigned_personnel_excluded' => $unassignedPersonnel,
+                    'area_personnel_count' => (int) collect($group['branches'])->filter(fn ($b) => !empty($b['is_area_personnel']))->sum(fn ($b) => count($b['guards'] ?? [])),
                     'premium_policy' => [
                         'client_id' => $group['area']['client_id'] ?? null,
                         'apply_overtime_rate' => $group['area']['apply_overtime_rate'] ?? true,
@@ -201,6 +204,7 @@ class BillingGenerationService
                 'updated' => $updated,
                 'skipped' => $skipped,
                 'unassigned_branches' => $unassigned,
+                'unassigned_personnel' => $unassignedPersonnel,
             ];
         });
     }

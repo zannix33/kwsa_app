@@ -153,6 +153,60 @@ class BillingExcelPreviewService
             }
         }
         unset($area, $branch, $guard);
+
+        // The worksheet header is company-specific. Split an area containing
+        // multiple companies into separate area/company sections so rows are
+        // never presented under the wrong company's invoice details.
+        $companyAreas = [];
+        foreach ($data['areas'] as $area) {
+            $byCompany = [];
+            foreach ($area['branches'] as $branch) {
+                $companyKey = (string) ($branch['company_id'] ?? '');
+                $byCompany[$companyKey][] = $branch;
+            }
+
+            foreach ($byCompany as $companyId => $companyBranches) {
+                $companyArea = $area;
+                $companyArea['branches'] = array_values($companyBranches);
+                $companyArea['company_id'] = $companyId !== '' ? (int) $companyId : null;
+                $companyArea['company_name'] = $companyBranches[0]['company_name'] ?? null;
+                $companyArea['billing_totals'] = $this->zeroTotals();
+                foreach ($companyBranches as $companyBranch) {
+                    foreach ($companyBranch['billing_totals'] as $key => $value) {
+                        if (isset($companyArea['billing_totals'][$key]) && is_numeric($value)) {
+                            $companyArea['billing_totals'][$key] += $value;
+                        }
+                    }
+                }
+                foreach ($companyArea['billing_totals'] as $key => $value) {
+                    if ($key !== 'guard_count') {
+                        $companyArea['billing_totals'][$key] = round((float) $value, 2);
+                    }
+                }
+                $companyAreas[] = $companyArea;
+            }
+        }
+        // Branch rows first; the shared area-personnel group is last on the
+        // same company/area worksheet and invoice.
+        foreach ($companyAreas as &$companyArea) {
+            usort($companyArea['branches'], function ($a, $b) {
+                return (int) !empty($a['is_area_personnel']) <=> (int) !empty($b['is_area_personnel']);
+            });
+            foreach ($companyArea['branches'] as &$branch) {
+                if (empty($branch['is_area_personnel'])) continue;
+                $positionOrder = ['Area Supervisor' => 1, 'Security Officer' => 2, 'Roving Guard' => 3];
+                usort($branch['guards'], function ($a, $b) use ($positionOrder) {
+                    $aRank = $positionOrder[$a['position_name'] ?? ''] ?? 99;
+                    $bRank = $positionOrder[$b['position_name'] ?? ''] ?? 99;
+                    if ($aRank !== $bRank) return $aRank <=> $bRank;
+                    return strcasecmp((string) ($a['guard_name'] ?? ''), (string) ($b['guard_name'] ?? ''));
+                });
+            }
+            unset($branch);
+        }
+        unset($companyArea);
+        $data['areas'] = $companyAreas;
+
         return $data;
     }
 

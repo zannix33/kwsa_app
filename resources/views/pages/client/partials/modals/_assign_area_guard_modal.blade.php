@@ -73,6 +73,16 @@
 
                     </div>
 
+                    <div class="form-group">
+                        <label for="assign_area_company_ids">Companies (select one or more)</label>
+                        <select name="company_ids[]" id="assign_area_company_ids" class="form-control" multiple required size="5">
+                            @foreach($client->companies()->where('active', 1)->orderBy('name')->get() as $companyOption)
+                                <option value="{{ $companyOption->id }}">{{ $companyOption->name }}</option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">The employee remains assigned to this one area. Select every company they will serve within it.</small>
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">

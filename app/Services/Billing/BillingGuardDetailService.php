@@ -38,7 +38,7 @@ class BillingGuardDetailService
         $dtrs = DailyTimeRecord::query()
             ->whereIn('payroll_id', $payrollIds)
             ->whereBetween('work_date', [$period->date_from, $period->date_to])
-            ->with(['user', 'area.region', 'branch.area.region', 'branch.company'])
+            ->with(['user.position', 'area.region', 'branch.area.region', 'branch.company', 'company'])
             ->orderBy('area_id')
             ->orderBy('branch_id')
             ->orderBy('user_id')
@@ -53,6 +53,7 @@ class BillingGuardDetailService
 
         $areas = [];
         $unassignedBranches = [];
+        $unassignedPersonnel = [];
 
         foreach ($dtrs as $dtr) {
             $area = $dtr->area ?: optional($dtr->branch)->area;
@@ -64,14 +65,25 @@ class BillingGuardDetailService
                 ]);
             }
 
-            if (!$branch) {
-                throw ValidationException::withMessages([
-                    'billing' => "DTR #{$dtr->id} has no branch assignment; billing rows require a branch.",
-                ]);
-            }
+            // Branch-based personnel retain their existing company source.
+            // Branchless personnel use the company explicitly saved on the DTR.
+            $company = $branch ? $branch->company : $dtr->company;
+            $companyId = $branch ? $branch->company_id : $dtr->company_id;
 
-            if (empty($branch->company_id)) {
-                $unassignedBranches[$area->id.'|'.$branch->id] = ['area_name' => $area->name, 'branch_name' => $branch->name];
+            if (empty($companyId)) {
+                if ($branch) {
+                    $unassignedBranches[$area->id.'|'.$branch->id] = [
+                        'area_name' => $area->name,
+                        'branch_name' => $branch->name,
+                    ];
+                } else {
+                    $unassignedPersonnel[$area->id.'|'.$dtr->user_id] = [
+                        'area_name' => $area->name,
+                        'user_id' => $dtr->user_id,
+                        'guard_name' => optional($dtr->user)->name,
+                        'reason' => 'No company is assigned on the DTR.',
+                    ];
+                }
                 continue;
             }
 
@@ -87,7 +99,11 @@ class BillingGuardDetailService
             $hourlyRate = $dailyRate / 8;
 
             $areaKey = (string) $area->id;
-            $branchKey = (string) $branch->id;
+            // Keep area-assigned personnel in one company/area group. This is
+            // an ordering bucket only; it is not a separate billing category.
+            $branchKey = $branch
+                ? 'branch:'.$branch->id
+                : 'area-personnel:'.$companyId;
             $guardKey = (string) $dtr->user_id;
 
             if (!isset($areas[$areaKey])) {
@@ -106,11 +122,12 @@ class BillingGuardDetailService
 
             if (!isset($areas[$areaKey]['branches'][$branchKey])) {
                 $areas[$areaKey]['branches'][$branchKey] = [
-                    'branch_id' => $branch->id,
-                    'branch_name' => $branch->name,
-                    'company_id' => $branch->company_id,
-                    'company_name' => optional($branch->company)->name,
-                    'assigned_guard_count' => (int) ($branch->assigned_guard_count ?? 1),
+                    'branch_id' => $branch?->id,
+                    'branch_name' => $branch ? $branch->name : '',
+                    'company_id' => $companyId,
+                    'company_name' => optional($company)->name,
+                    'is_area_personnel' => !$branch,
+                    'assigned_guard_count' => $branch ? (int) ($branch->assigned_guard_count ?? 1) : 0,
                     'guards' => [],
                 ];
             }
@@ -119,6 +136,7 @@ class BillingGuardDetailService
                 $areas[$areaKey]['branches'][$branchKey]['guards'][$guardKey] = [
                     'user_id' => $dtr->user_id,
                     'guard_name' => $dtr->user->name,
+                    'position_name' => optional($dtr->user->position)->name,
                     'days' => [],
                     'regular_hours' => 0.0,
                     'regular_ot_hours' => 0.0,
@@ -204,6 +222,11 @@ class BillingGuardDetailService
             $areaData['branches'] = array_values($areaData['branches']);
             foreach ($areaData['branches'] as &$branchData) {
                 $branchData['guards'] = array_values($branchData['guards']);
+                if (!empty($branchData['is_area_personnel'])) {
+                    // Area personnel share one company/area billing group and use
+                    // the standard contracted-post calculation.
+                    $branchData['assigned_guard_count'] = count($branchData['guards']);
+                }
                 foreach ($branchData['guards'] as &$guardData) {
                     $days = array_values($guardData['days']);
                     $guardData['attended_days'] = count(array_filter($days, function ($day) {
@@ -236,6 +259,7 @@ class BillingGuardDetailService
             ],
             'areas' => array_values($areas),
             'unassigned_branches' => array_values($unassignedBranches),
+            'unassigned_personnel' => array_values($unassignedPersonnel),
         ];
     }
 

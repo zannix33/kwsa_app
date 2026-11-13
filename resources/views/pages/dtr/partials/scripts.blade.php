@@ -493,6 +493,7 @@
 
                 let defaultArea = document.getElementById('default_area').value;
                 let defaultBranch = document.getElementById('default_branch').value;
+                let defaultCompany = document.getElementById('default_company').value;
 
                 document
                     .querySelectorAll('tbody tr')
@@ -500,6 +501,7 @@
 
                         let areaSelect = row.querySelector('.area-select');
                         let branchSelect = row.querySelector('.branch-select');
+                        let companySelect = row.querySelector('.company-select');
 
                         if (areaSelect) {
                             areaSelect.value = defaultArea;
@@ -508,6 +510,10 @@
 
                         if (branchSelect) {
                             branchSelect.value = defaultBranch;
+                            branchSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        if (companySelect && !defaultBranch) {
+                            companySelect.value = defaultCompany;
                         }
 
                         row.querySelector('.operation_start').value =

@@ -12,7 +12,7 @@
         if (!areaId) {
 
             $('#guards-modal-table').html(
-                emptyRow(4, 'Select an Area.')
+                emptyRow(5, 'Select an Area.')
             );
 
             return;
@@ -20,7 +20,7 @@
         }
 
         $('#guards-modal-table').html(
-            loadingRow(4, 'Loading guards...')
+            loadingRow(5, 'Loading guards...')
         );
 
         $.ajax({
@@ -43,7 +43,7 @@
             error: function () {
 
                 $('#guards-modal-table').html(
-                    errorRow(4, 'Unable to load guards.')
+                    errorRow(5, 'Unable to load guards.')
                 );
 
             }

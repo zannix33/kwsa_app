@@ -1,253 +1,129 @@
 @push('custom-scripts')
-
 <script>
+    let employeeAreas = @json($areas);
 
-    let employeeAreas=@json($areas);
+    function areaForId(areaId) {
+        return employeeAreas.find(area => String(area.id) === String(areaId));
+    }
 
-    $(document).on(
-        'change',
-        '.area-select',
+    function fillCompanies(select, area, selectedId = '') {
+        select.innerHTML = '<option value="">Select Company</option>';
+        (area && area.assigned_companies ? area.assigned_companies : []).forEach(company => {
+            const option = document.createElement('option');
+            option.value = company.id;
+            option.textContent = company.name;
+            if (String(company.id) === String(selectedId)) option.selected = true;
+            select.appendChild(option);
+        });
+        select.disabled = !area || !area.assigned_companies || area.assigned_companies.length === 0;
+    }
 
-        function(){
+    function fillBranches(select, area, selectedId = '') {
+        select.innerHTML = '<option value="">No Branch</option>';
+        (area && area.branches ? area.branches : []).forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch.id;
+            option.textContent = branch.name;
+            if (String(branch.id) === String(selectedId)) option.selected = true;
+            select.appendChild(option);
+        });
+    }
 
-            let row=$(this).closest('tr');
-            let branch=row.find('.branch-select');
-
-            branch.empty();
-            branch.append(
-                '<option value="">No Branch</option>'
-            );
-
-            let areaId=$(this).val();
-            let area=employeeAreas.find(function(item){
-                return item.id==areaId;
-            });
-
-            if(!area)
-                return;
-            area.branches.forEach(function(branchItem){
-                branch.append(
-                    `<option value="${branchItem.id}">
-                    ${branchItem.name}
-                </option>`
-                );
-            });
+    function applyAreaToRow(row, areaId, companyId = '', branchId = '') {
+        const area = areaForId(areaId);
+        const branch = row.querySelector('.branch-select');
+        const company = row.querySelector('.company-select');
+        if (branch) fillBranches(branch, area, branchId);
+        if (company) fillCompanies(company, area, companyId);
+        if (branch && branch.value) {
+            if (company) { company.value = ''; company.disabled = true; }
+        } else if (company) {
+            company.disabled = !area || !area.assigned_companies || area.assigned_companies.length === 0;
         }
-    );
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Employee Changed
-    |--------------------------------------------------------------------------
-    |
-    | Loads all assigned Areas and Branches of the selected employee.
-    |
-    */
+    $(document).on('change', '.area-select', function () {
+        const row = this.closest('tr');
+        applyAreaToRow(row, this.value);
+    });
+
+    $(document).on('change', '.branch-select', function () {
+        const company = this.closest('tr').querySelector('.company-select');
+        if (!company) return;
+        if (this.value) { company.value = ''; company.disabled = true; }
+        else {
+            const area = areaForId(this.closest('tr').querySelector('.area-select').value);
+            fillCompanies(company, area);
+        }
+    });
 
     $('#user_id').on('change', function () {
-
-        let employeeId = $(this).val();
-
+        const employeeId = $(this).val();
         employeeAreas = [];
-
         if (!employeeId) {
-
-            $('.area-select').html(
-                '<option value="">Select Area</option>'
-            );
-
-            $('.branch-select').html(
-                '<option value="">No Branch</option>'
-            );
+            $('.area-select').html('<option value="">Select Area</option>');
+            $('.branch-select').html('<option value="">No Branch</option>');
+            $('.company-select').html('<option value="">Select Company</option>').prop('disabled', true);
             return;
         }
-
         $.ajax({
-
-            url: '/employees/' + employeeId + '/assignments',
+            url: '/dtr/employees/' + employeeId + '/assignments',
             type: 'GET',
             dataType: 'json',
             success: function (response) {
-                employeeAreas = response.areas;
+                employeeAreas = response.areas || [];
                 populateAreaSelects();
             }
         });
-
     });
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Populate every Area Select
-    |--------------------------------------------------------------------------
-    */
-
-    function populateAreaSelects()
-    {
-
+    function populateAreaSelects() {
         $('.area-select').each(function () {
-
+            const current = this.value;
             let html = '<option value="">Select Area</option>';
-
-            employeeAreas.forEach(function (area) {
-
-                html += `
-                <option value="${area.id}">
-                    ${area.name}
-                </option>
-            `;
-
-            });
-
+            employeeAreas.forEach(area => { html += `<option value="${area.id}">${area.name}</option>`; });
             $(this).html(html);
-
+            if (employeeAreas.length === 1) {
+                this.value = employeeAreas[0].id;
+                applyAreaToRow(this.closest('tr'), this.value);
+            } else if (current) {
+                this.value = current;
+                applyAreaToRow(this.closest('tr'), current);
+            }
         });
-
+        let defaultHtml = '<option value="">Select Area</option>';
+        employeeAreas.forEach(area => { defaultHtml += `<option value="${area.id}">${area.name}</option>`; });
+        $('#default_area').html(defaultHtml);
+        if (employeeAreas.length === 1) $('#default_area').val(employeeAreas[0].id).trigger('change');
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Area Changed
-    |--------------------------------------------------------------------------
-    |
-    | Load Branches only for the selected Area.
-    |
-    */
-
-    $(document).on('change', '.area-select', function () {
-
-        let areaId = $(this).val();
-
-        let row = $(this).closest('tr');
-
-        let branchSelect = row.find('.branch-select');
-
-        branchSelect.html(
-            '<option value="">No Branch</option>'
-        );
-
-        if (!areaId)
-            return;
-
-        let area = employeeAreas.find(function(item){
-
-            return item.id == areaId;
-
-        });
-
-        if (!area)
-            return;
-
-        area.branches.forEach(function(branch){
-
-            branchSelect.append(
-
-                `<option value="${branch.id}">
-                ${branch.name}
-            </option>`
-
-            );
-
-        });
-
+    $('#default_area').on('change', function () {
+        const area = areaForId(this.value);
+        fillBranches(document.getElementById('default_branch'), area);
+        fillCompanies(document.getElementById('default_company'), area);
+        if (area && area.branches && area.branches.length === 1) $('#default_branch').val(area.branches[0].id);
+        if (area && area.assigned_companies && area.assigned_companies.length === 1) $('#default_company').val(area.assigned_companies[0].id);
     });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Apply Default Assignment
-    |--------------------------------------------------------------------------
-    */
 
     $('#btnApplyAssignment').on('click', function () {
-
-        let area = $('#default_area').val();
-
-        let branch = $('#default_branch').val();
-
-        $('.area-select').each(function(){
-
-            $(this).val(area).trigger('change');
-
+        const areaId = $('#default_area').val();
+        const branchId = $('#default_branch').val();
+        const companyId = $('#default_company').val();
+        $('.area-select').each(function () {
+            this.value = areaId;
+            applyAreaToRow(this.closest('tr'), areaId, companyId, branchId);
         });
-
-        setTimeout(function(){
-
-            $('.branch-select').each(function(){
-
-                $(this).val(branch);
-
-            });
-
-        },100);
-
     });
 
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Area Changed
-    |--------------------------------------------------------------------------
-    |
-    | Update the Branch dropdown at the top.
-    |
-    */
-
-    $('#default_area').on('change', function(){
-
-        let areaId = $(this).val();
-
-        let html = '<option value="">No Branch</option>';
-
-        let area = employeeAreas.find(function(item){
-
-            return item.id == areaId;
-
-        });
-
-        if(area){
-
-            area.branches.forEach(function(branch){
-
-                html += `
-                <option value="${branch.id}">
-                    ${branch.name}
-                </option>
-            `;
-
-            });
-
-        }
-
-        $('#default_branch').html(html);
-
-        // Automatically choose a branch when this area has exactly one.
-        if (area && area.branches.length === 1) {
-            $('#default_branch').val(area.branches[0].id);
-        }
-
-    });
-
-    // Initialize defaults from the guard's assignments.
     $(function () {
         if (employeeAreas.length === 1) {
-            let onlyArea = employeeAreas[0];
-            $('#default_area').val(onlyArea.id).trigger('change');
-
-            if (onlyArea.branches.length === 1) {
-                $('#default_branch').val(onlyArea.branches[0].id);
-            }
-
+            const area = employeeAreas[0];
+            $('#default_area').val(area.id).trigger('change');
             $('.area-select').each(function () {
-                $(this).val(onlyArea.id).trigger('change');
-                if (onlyArea.branches.length === 1) {
-                    $(this).closest('tr').find('.branch-select').val(onlyArea.branches[0].id);
-                }
+                this.value = area.id;
+                applyAreaToRow(this.closest('tr'), area.id);
             });
         }
     });
-
 </script>
 @endpush

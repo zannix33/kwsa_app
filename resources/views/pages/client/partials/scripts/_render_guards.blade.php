@@ -18,7 +18,7 @@
         if (!guards || guards.length === 0) {
 
             $('#guards-modal-table').html(
-                emptyRow(4, 'No guards assigned.')
+                emptyRow(5, 'No guards assigned.')
             );
 
             return;
@@ -56,6 +56,10 @@
 
             }
 
+            let companies = mode === 'area' && Array.isArray(guard.assigned_companies) && guard.assigned_companies.length
+                ? guard.assigned_companies.map(escapeHtml).join(', ')
+                : (mode === 'area' ? 'Not assigned' : '—');
+
             html += `
             <tr>
 
@@ -79,6 +83,10 @@
 
                     ${escapeHtml(guard.position ? guard.position.name : '-')}
 
+                </td>
+
+                <td>
+                    ${companies}
                 </td>
 
                 <td class="text-center">

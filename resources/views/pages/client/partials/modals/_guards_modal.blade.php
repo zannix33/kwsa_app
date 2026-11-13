@@ -15,8 +15,8 @@
             <div class="modal-body">
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered mb-0">
-                        <thead class="thead-light"><tr><th style="width:140px;">Employee No.</th><th>Name</th><th style="width:180px;">Position</th><th class="text-center" style="width:90px;">Action</th></tr></thead>
-                        <tbody id="guards-modal-table"><tr><td colspan="4" class="text-center text-muted">Select an Area or Branch, then click View Guards.</td></tr></tbody>
+                        <thead class="thead-light"><tr><th style="width:140px;">Employee No.</th><th>Name</th><th style="width:180px;">Position</th><th>Assigned Companies</th><th class="text-center" style="width:90px;">Action</th></tr></thead>
+                        <tbody id="guards-modal-table"><tr><td colspan="5" class="text-center text-muted">Select an Area or Branch, then click View Guards.</td></tr></tbody>
                     </table>
                 </div>
             </div>
