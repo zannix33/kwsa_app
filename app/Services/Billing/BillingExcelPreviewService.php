@@ -41,27 +41,36 @@ class BillingExcelPreviewService
                 $eligiblePostCount = 0;
                 foreach ($branch['guards'] as &$rankedGuard) {
                     $eligible = (int) ($rankedGuard['attended_days'] ?? 0) > 0
-                        && $eligiblePostCount < $branch['assigned_guard_count'];
+                        && (!empty($branch['is_individual_posts'])
+                            || $eligiblePostCount < $branch['assigned_guard_count']);
                     $rankedGuard['is_contracted_post'] = $eligible;
                     $rankedGuard['is_additional_post'] = false;
                     $rankedGuard['retirement_rank'] = $eligible ? ++$eligiblePostCount : null;
                 }
                 unset($rankedGuard);
 
-                // One additional-post guard is allowed per branch only when at
-                // least two guards worked and combined attendance exceeds 15 days.
+                // Additional posts are the excess guard-days above the 15-day
+                // contracted allowance for the whole branch. Do not assign the
+                // selected guard's full attendance to the additional-post column.
                 $guardsOnDuty = count(array_filter($branch['guards'], fn ($g) => (int) ($g['attended_days'] ?? 0) > 0));
                 $totalAttendedDays = array_sum(array_map(fn ($g) => (int) ($g['attended_days'] ?? 0), $branch['guards']));
-                $additionalPostEligible = $guardsOnDuty >= 2 && $totalAttendedDays > 15;
-                if ($additionalPostEligible) {
-                    foreach ($branch['guards'] as &$candidateGuard) {
-                        if (!(bool) ($candidateGuard['is_contracted_post'] ?? false)
-                            && (int) ($candidateGuard['attended_days'] ?? 0) > 0) {
-                            $candidateGuard['is_additional_post'] = true;
-                            break; // guards are already ranked; exactly one extra guard
-                        }
+                $additionalPostDaysRemaining = empty($branch['is_individual_posts']) && $guardsOnDuty >= 2
+                    ? max(0, $totalAttendedDays - 15)
+                    : 0;
+
+                // Allocate only the excess days to the least-attended guards
+                // first. Their actual attended_days and DTR day records remain
+                // untouched, so the contracted portion is not treated as absence.
+                for ($i = count($branch['guards']) - 1; $i >= 0 && $additionalPostDaysRemaining > 0; $i--) {
+                    $guardAttendance = max(0, (int) ($branch['guards'][$i]['attended_days'] ?? 0));
+                    if ($guardAttendance === 0) {
+                        continue;
                     }
-                    unset($candidateGuard);
+
+                    $allocatedAdditionalDays = min($guardAttendance, $additionalPostDaysRemaining);
+                    $branch['guards'][$i]['additional_post_days'] = $allocatedAdditionalDays;
+                    $branch['guards'][$i]['is_additional_post'] = $allocatedAdditionalDays > 0;
+                    $additionalPostDaysRemaining -= $allocatedAdditionalDays;
                 }
 
                 foreach ($branch['guards'] as &$guard) {
@@ -71,7 +80,7 @@ class BillingExcelPreviewService
                     $isContractedPost = (bool) ($guard['is_contracted_post'] ?? false);
                     $halfMonth = $isContractedPost ? $monthly / 2 : 0.0;
                     $isAdditionalPost = (bool) ($guard['is_additional_post'] ?? false);
-                    $additionalPostDays = $isAdditionalPost ? (float) ($guard['attended_days'] ?? 0) : 0.0;
+                    $additionalPostDays = (float) ($guard['additional_post_days'] ?? 0);
                     $additionalPostDailyRate = $monthly * 12 / 365; // workbook's additional-post daily rate
                     $applyOvertimePremium = (bool) ($area['apply_overtime_rate'] ?? true);
                     $applyNightDiffPremium = (bool) ($area['apply_night_diff_rate'] ?? true);
@@ -89,8 +98,8 @@ class BillingExcelPreviewService
                     $deductionHourly = ($monthly + ($isContractedPost ? $retirement : 0.0) + $monthly * .20) * 12 / 365 / 8;
                     $deductionHours = (float) $guard['late_hours'] + (float) $guard['undertime_hours'];
                     $deductions = $deductionHours * $deductionHourly;
-                    // Additional posts are billed at the daily additional-post rate
-                    // for the guard's attended days in this 15-day payroll period.
+                    // Only days allocated above the branch's 15-day contracted
+                    // allowance are billed at the additional-post daily rate.
                     $penaltyHours = 0.0;
                     $additionalPostAmount = $additionalPostDays * $additionalPostDailyRate;
                     $beforeFee = $halfMonth + $additionalPostAmount + $regularOt + $specialOt + $holidayOt
@@ -186,25 +195,6 @@ class BillingExcelPreviewService
                 $companyAreas[] = $companyArea;
             }
         }
-        // Branch rows first; the shared area-personnel group is last on the
-        // same company/area worksheet and invoice.
-        foreach ($companyAreas as &$companyArea) {
-            usort($companyArea['branches'], function ($a, $b) {
-                return (int) !empty($a['is_area_personnel']) <=> (int) !empty($b['is_area_personnel']);
-            });
-            foreach ($companyArea['branches'] as &$branch) {
-                if (empty($branch['is_area_personnel'])) continue;
-                $positionOrder = ['Area Supervisor' => 1, 'Security Officer' => 2, 'Roving Guard' => 3];
-                usort($branch['guards'], function ($a, $b) use ($positionOrder) {
-                    $aRank = $positionOrder[$a['position_name'] ?? ''] ?? 99;
-                    $bRank = $positionOrder[$b['position_name'] ?? ''] ?? 99;
-                    if ($aRank !== $bRank) return $aRank <=> $bRank;
-                    return strcasecmp((string) ($a['guard_name'] ?? ''), (string) ($b['guard_name'] ?? ''));
-                });
-            }
-            unset($branch);
-        }
-        unset($companyArea);
         $data['areas'] = $companyAreas;
 
         return $data;
