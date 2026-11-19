@@ -99,11 +99,11 @@ class BillingGuardDetailService
             $hourlyRate = $dailyRate / 8;
 
             $areaKey = (string) $area->id;
-            // Keep area-assigned personnel in one company/area group. This is
-            // an ordering bucket only; it is not a separate billing category.
+            // A branchless employee is an individual billable post, grouped by
+            // the DTR's company within the area (not by a fabricated branch).
             $branchKey = $branch
                 ? 'branch:'.$branch->id
-                : 'area-personnel:'.$companyId;
+                : 'individual:'.$companyId;
             $guardKey = (string) $dtr->user_id;
 
             if (!isset($areas[$areaKey])) {
@@ -123,11 +123,13 @@ class BillingGuardDetailService
             if (!isset($areas[$areaKey]['branches'][$branchKey])) {
                 $areas[$areaKey]['branches'][$branchKey] = [
                     'branch_id' => $branch?->id,
-                    'branch_name' => $branch ? $branch->name : '',
+                    'branch_name' => $branch ? $branch->name : 'Individual posts',
                     'company_id' => $companyId,
                     'company_name' => optional($company)->name,
-                    'is_area_personnel' => !$branch,
-                    'assigned_guard_count' => $branch ? (int) ($branch->assigned_guard_count ?? 1) : 0,
+                    'is_individual_posts' => !$branch,
+                    'assigned_guard_count' => $branch
+                        ? (int) ($branch->assigned_guard_count ?? 1)
+                        : 0,
                     'guards' => [],
                 ];
             }
@@ -222,9 +224,8 @@ class BillingGuardDetailService
             $areaData['branches'] = array_values($areaData['branches']);
             foreach ($areaData['branches'] as &$branchData) {
                 $branchData['guards'] = array_values($branchData['guards']);
-                if (!empty($branchData['is_area_personnel'])) {
-                    // Area personnel share one company/area billing group and use
-                    // the standard contracted-post calculation.
+                if (!empty($branchData['is_individual_posts'])) {
+                    // Every active branchless employee is billed as their own post.
                     $branchData['assigned_guard_count'] = count($branchData['guards']);
                 }
                 foreach ($branchData['guards'] as &$guardData) {
