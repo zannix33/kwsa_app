@@ -184,6 +184,10 @@ class BillingExcelPreviewExport
             $branchName = ($index === 0 || !$sameBranch) ? ($branch['branch_name'] ?? '') : '';
 
             $sheet->setCellValue("A{$row}", $branchName);
+            // Draw a strong horizontal separator before the first branchless personnel group.
+            if (!empty($branch['is_individual_posts']) && ($index === 0 || empty($guards[$index - 1]['branch']['is_individual_posts']))) {
+                $sheet->getStyle("A{$row}:AJ{$row}")->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
+            }
             $sheet->setCellValue("B{$row}", $guard['guard_name'] ?? '');
             $guardCount = (float) ($billing['guard_count'] ?? 1);
             $sheet->setCellValue("C{$row}", $guardCount > 0 ? $guardCount : null);

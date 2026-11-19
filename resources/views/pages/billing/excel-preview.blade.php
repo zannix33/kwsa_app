@@ -155,6 +155,9 @@
                 @php
                     $guards = $branch['guards'];
                 @endphp
+                @if(!empty($branch['is_individual_posts']) && $loop->first === false && !empty($branch['guards']))
+                    <tr class="personnel-separator"><td colspan="35" style="border-top:2px solid #222;padding:0;height:0;line-height:0"></td></tr>
+                @endif
                 @foreach($guards as $guard)
                     @php
                         $v = $guard['billing'];
@@ -167,7 +170,7 @@
                         $accountingOt = (float)$v['regular_ot'] + (float)$v['special_ot'] + (float)$v['holiday_ot'] + (float)$v['regular_nd'] + (float)$v['special_nd'] + (float)$v['holiday_nd'];
                     @endphp
                     <tr>
-                        <td class="left">{{ $loop->first ? ($branch['branch_name'] ?? '') : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ (float)($v['guard_count'] ?? 1) > 0 ? number_format((float)$v['guard_count'],0) : '' }}</td>
+                        <td class="left">{{ $loop->first ? ($branch['is_individual_posts'] ?? false ? 'INDIVIDUAL POSTS' : $branch['branch_name']) : '' }}</td><td class="left">{{ $guard['guard_name'] }}</td><td>{{ (float)($v['guard_count'] ?? 1) > 0 ? number_format((float)$v['guard_count'],0) : '' }}</td>
                         <td>{{ $money($v['half_month_rate']) }}</td><td>{{ $hours($additionalDays) }}</td><td>{{ $money($v['additional_post_amount'] ?? 0) }}</td>
                         <td>{{ $hours($guard['regular_ot_hours']) }}</td><td>{{ $money($v['regular_ot']) }}</td><td>{{ $hours($guard['sunday_special_ot_hours']) }}</td><td>{{ $money($v['special_ot']) }}</td><td>{{ $hours($guard['regular_holiday_ot_hours']) }}</td><td>{{ $money($v['holiday_ot']) }}</td>
                         <td>{{ $hours($guard['regular_nd_hours']) }}</td><td>{{ $money($v['regular_nd']) }}</td><td>{{ $hours($guard['sunday_special_nd_hours']) }}</td><td>{{ $money($v['special_nd']) }}</td><td>{{ $hours($guard['legal_holiday_nd_hours']) }}</td><td>{{ $money($v['holiday_nd']) }}</td>
@@ -178,7 +181,7 @@
 
             @endforeach
             <tr class="area-total">
-                <td class="left">AREA {{ $area['area_name'] }} TOTAL — ALL PERSONNEL</td><td></td><td>{{ number_format((float)$areaSum['guard_count'],0) }}</td><td>{{ $money($areaSum['half_month_rate']) }}</td><td></td><td></td>
+                <td class="left">AREA {{ $area['area_name'] }} TOTAL — ALL BRANCHES</td><td></td><td>{{ number_format((float)$areaSum['guard_count'],0) }}</td><td>{{ $money($areaSum['half_month_rate']) }}</td><td></td><td></td>
                 <td></td><td>{{ $money($areaSum['regular_ot']) }}</td><td></td><td>{{ $money($areaSum['special_ot']) }}</td><td></td><td>{{ $money($areaSum['holiday_ot']) }}</td>
                 <td></td><td>{{ $money($areaSum['regular_nd']) }}</td><td></td><td>{{ $money($areaSum['special_nd']) }}</td><td></td><td>{{ $money($areaSum['holiday_nd']) }}</td>
                 <td>{{ $hours($areaSum['deduction_hours']) }}</td><td>{{ $money($areaSum['deductions']) }}</td><td>{{ $money($areaSum['before_fee']) }}</td><td>{{ $money($areaSum['agency_fee']) }}</td><td>{{ $money($areaSum['ewt']) }}</td><td>{{ $money($areaSum['retirement_half']) }}</td><td>{{ $money($areaSum['gross']) }}</td><td>{{ $hours($areaSum['penalty_hours'] ?? 0) }}</td><td>{{ $money(200) }}</td><td>{{ $money($areaSum['net_payable']) }}</td><td></td>
@@ -191,7 +194,7 @@
             <tr><td>EWT</td><td>{{ $money($areaSum['ewt']) }}</td></tr>
             <tr><td>NET</td><td>{{ $money($areaSum['net_payable']) }}</td></tr>
         </table>
-        <p class="note">Branch-assigned personnel are listed first, followed by Area Supervisors, Security Officers and Roving Guards in the same company and area billing list. Group names appear only on the first guard row, with one overall area total at the end.</p>
+        <p class="note">Branches and individual posts in this area are listed continuously on this worksheet. Group names appear only on the first guard row, with one overall area total at the end.</p>
     </section>
 @endforeach
 </body>
